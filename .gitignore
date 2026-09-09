@@ -1,0 +1,24 @@
+# CMake build directories
+build/
+build-*/
+cmake-build-*/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CTestTestfile.cmake
+Makefile
+Testing/
+cmake_install.cmake
+compile_commands.json
+install_manifest.txt
+_deps/
+
+# Editors
+.vscode/*
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# macOS
+.DS_Store
