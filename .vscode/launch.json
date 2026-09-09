@@ -1,0 +1,67 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "OML: Debug Tests All",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "OML: Build Debug"
+    },
+    {
+      "name": "OML: Debug Tests Pipeline",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
+      "args": [
+        "[pipeline]"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "OML: Build Debug"
+    },
+    {
+      "name": "OML: Debug Replay Demo",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "OML: Build Debug"
+    },
+    {
+      "name": "OML: Run Benchmarks Runner",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-bench-release/benchmarks/obz_market_engine_benchmarks",
+      "args": [
+        "--benchmark_filter=runner"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "OML: Build Bench Release"
+    },
+    {
+      "name": "OML: Run Tracy Benchmark Runner",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-tracy-release/benchmarks/obz_market_engine_benchmarks",
+      "args": [
+        "--benchmark_filter=runner_submit_round_trip",
+        "--benchmark_min_time=120s"
+      ],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "OML: Build Tracy Release"
+    }
+  ]
+}

@@ -1,0 +1,218 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "OML: Configure Debug",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build",
+        "-DCMAKE_BUILD_TYPE=Debug"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Build Debug",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "--build",
+        "build",
+        "--parallel"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Configure Debug",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "OML: Test All",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/ctest",
+      "args": [
+        "--test-dir",
+        "build",
+        "--output-on-failure"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Debug",
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Test Pipeline",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/tests/obz_market_engine_tests",
+      "args": [
+        "[pipeline]"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Debug",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Run Replay Demo",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Debug",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Run Replay Demo JSONL",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
+      "args": [
+        "--format",
+        "jsonl"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Debug",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Run Replay Scenarios",
+      "type": "shell",
+      "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
+      "args": [
+        "--directory",
+        "scenarios"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Debug",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Configure Bench Release",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build-bench-release",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DOBZ_MARKET_LAB_BUILD_TESTS=OFF",
+        "-DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Build Bench Release",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "--build",
+        "build-bench-release",
+        "--target",
+        "obz_market_engine_benchmarks",
+        "--parallel"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Configure Bench Release",
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "OML: Benchmark Runner",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-bench-release/benchmarks/obz_market_engine_benchmarks",
+      "args": [
+        "--benchmark_filter=runner"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Bench Release",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Configure Tracy Release",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "-S",
+        ".",
+        "-B",
+        "build-tracy-release",
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DOBZ_MARKET_LAB_BUILD_TESTS=OFF",
+        "-DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON",
+        "-DOBZ_MARKET_LAB_ENABLE_TRACY=ON"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Build Tracy Release",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/cmake",
+      "args": [
+        "--build",
+        "build-tracy-release",
+        "--target",
+        "obz_market_engine_benchmarks",
+        "--parallel"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Configure Tracy Release",
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "OML: Tracy Run Runner Benchmark",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-tracy-release/benchmarks/obz_market_engine_benchmarks",
+      "args": [
+        "--benchmark_filter=runner_submit_round_trip",
+        "--benchmark_min_time=120s"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML: Build Tracy Release",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML: Tracy Open Profiler",
+      "type": "shell",
+      "command": "/opt/homebrew/bin/tracy-profiler",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
