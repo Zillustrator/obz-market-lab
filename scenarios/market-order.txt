@@ -1,0 +1,14 @@
+# Market order scenario.
+#
+# Demonstrates that market orders execute immediately against available
+# liquidity and never rest on the book.
+
+submit limit 1 10 ETH-USD sell 100 3
+submit limit 2 20 ETH-USD sell 101 4
+snapshot ETH-USD 5
+
+submit market 3 30 ETH-USD buy 5
+snapshot ETH-USD 5
+
+submit market 4 40 ETH-USD buy 5
+snapshot ETH-USD 5

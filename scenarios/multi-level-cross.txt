@@ -1,0 +1,11 @@
+# Multi-level crossing scenario.
+#
+# Demonstrates price-time priority across several resting ask levels.
+
+submit limit 1 10 ETH-USD sell 100 3
+submit limit 1 11 ETH-USD sell 101 4
+submit limit 1 12 ETH-USD sell 102 5
+snapshot ETH-USD 5
+
+submit limit 2 20 ETH-USD buy 101 10
+snapshot ETH-USD 5

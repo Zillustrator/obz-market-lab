@@ -1,0 +1,20 @@
+# Basic crossing scenario for the replay demo.
+#
+# Format:
+# submit limit  <user> <client_order> <instrument> <buy|sell> <price> <size>
+# submit market <user> <client_order> <instrument> <buy|sell> <size>
+# cancel        <user> <client_order>
+# snapshot      <instrument> <depth>
+
+submit limit 1 10 ETH-USD sell 100 5
+submit limit 2 20 ETH-USD buy 99 3
+snapshot ETH-USD 5
+
+submit limit 3 30 ETH-USD buy 101 4
+snapshot ETH-USD 5
+
+cancel 2 20
+snapshot ETH-USD 5
+
+submit market 4 40 ETH-USD buy 2
+snapshot ETH-USD 5

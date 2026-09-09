@@ -1,0 +1,14 @@
+# Demonstrates reduce-only update priority and repricing that crosses the book.
+
+submit limit 1 10 ETH-USD sell 100 5
+submit limit 2 20 ETH-USD sell 100 5
+update limit 1 10 100 3
+snapshot ETH-USD 5
+
+submit limit 3 30 ETH-USD buy 100 4
+snapshot ETH-USD 5
+
+submit limit 4 40 ETH-USD buy 99 5
+submit limit 5 50 ETH-USD sell 105 5
+update limit 5 50 99 5
+snapshot ETH-USD 5

@@ -1,0 +1,15 @@
+# Multi-symbol scenario.
+#
+# Demonstrates that books are isolated by instrument.
+
+submit limit 1 10 ETH-USD sell 100 5
+submit limit 2 20 BTC-USD sell 50000 2
+submit limit 3 30 ETH-USD buy 100 3
+
+snapshot ETH-USD 5
+snapshot BTC-USD 5
+
+submit limit 4 40 BTC-USD buy 50000 1
+
+snapshot ETH-USD 5
+snapshot BTC-USD 5

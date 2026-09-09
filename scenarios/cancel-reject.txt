@@ -1,0 +1,12 @@
+# Cancel rejection scenario.
+#
+# Demonstrates successful cancellation and rejection for an inactive order.
+
+submit limit 1 10 ETH-USD buy 99 5
+snapshot ETH-USD 5
+
+cancel 1 10
+snapshot ETH-USD 5
+
+cancel 1 10
+cancel 9 90
