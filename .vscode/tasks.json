@@ -2,6 +2,87 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "OML Linux: Build Development Image",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "build-image"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "OML Linux: Open Shell",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "shell"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML Linux: Test ObzLib GCC",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "test-obz-gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML Linux: Test ObzLib Clang",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "test-obz-clang"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML Linux: Test Market Lab GCC",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "test-market-gcc"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "OML Linux: Test Market Lab Clang",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "test-market-clang"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "OML: Configure Debug",
       "type": "shell",
       "command": "/opt/homebrew/bin/cmake",
