@@ -21,6 +21,9 @@ The Dockerfile instructions have these roles:
 - `RUN` installs tools while building the image. `build-essential` supplies
   GCC/G++, standard development headers and Make; Clang is installed separately.
   CMake configures builds and Ninja executes their generated build rules.
+  `man-db`, `manpages` and `manpages-dev` provide Linux command, protocol and
+  system-call reference pages. The recipe also restores those pages and the
+  normal `man` executable removed by Ubuntu's minimized container setup.
 - `WORKDIR` sets the initial directory for subsequent commands and the shell.
 - `CMD` selects Bash as the default process when a container starts.
 
