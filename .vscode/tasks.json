@@ -55,6 +55,20 @@
       "problemMatcher": []
     },
     {
+      "label": "OML Linux: Test ObzLib ASan + UBSan",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "test-obz-sanitize"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "OML Linux: Build Development Image",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
       "label": "OML Linux: Test Market Lab GCC",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/linux-dev.sh",
