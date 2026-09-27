@@ -17,6 +17,7 @@ benchmarks, and profiling.
 - Price-time priority.
 - Multiple symbols.
 - Deterministic event output.
+- Versioned binary encoding and validation for top-of-book market-data updates.
 - Focused tests for matching behaviour.
 - Queue-backed engine runner that serialises commands onto an engine thread.
 - Console replay demo that exercises the queued pipeline.
@@ -47,6 +48,11 @@ with ordered price maps and FIFO queues at each level.
 The `engine_runner` is the concurrency boundary. It serialises submit, update,
 cancel, and snapshot commands through an ObzLib bounded blocking queue and
 executes them on a dedicated engine thread.
+
+The market-data codec converts `book_updated` events to and from an explicit
+network byte layout. It is kept separate from socket transport so malformed
+packet handling can be tested deterministically. See
+`docs/market-data-protocol.md` for the current wire contract.
 
 ## Matching Rules
 

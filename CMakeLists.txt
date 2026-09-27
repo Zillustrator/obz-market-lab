@@ -49,6 +49,7 @@ if (OBZ_MARKET_LAB_ENABLE_TRACY)
 endif()
 
 add_subdirectory(cpp/engine)
+add_subdirectory(cpp/market_data)
 add_subdirectory(cpp/pipeline)
 
 if (OBZ_MARKET_LAB_BUILD_APPS)

@@ -19,6 +19,7 @@ FetchContent_MakeAvailable(Catch2)
 add_executable(obz_market_engine_tests
     engine_tests.cpp
     jsonl_writer_tests.cpp
+    market_data_codec_tests.cpp
     pipeline_tests.cpp
     scenario_parser_tests.cpp
 )
@@ -26,6 +27,7 @@ add_executable(obz_market_engine_tests
 target_link_libraries(obz_market_engine_tests
     PRIVATE
         obz_market::replay_support
+        obz_market::market_data
         Catch2::Catch2WithMain
 )
 
