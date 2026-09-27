@@ -87,25 +87,32 @@ To consume the published ObzLib `v0.1.0` tag instead, omit
 
 Shared VS Code tasks and launch configurations are included in `.vscode/`.
 
-Use `Cmd + Shift + P` -> `Tasks: Run Task`, then search for `OML` to run
-project tasks:
+Use `Cmd + Shift + P` -> `Tasks: Run Task`, then search for `Obz Market Lab`
+to run project tasks. Linux tasks include:
 
-- `OML: Build Debug`
-- `OML: Test All`
-- `OML: Test Pipeline`
-- `OML: Run Replay Demo`
-- `OML: Run Replay Demo JSONL`
-- `OML: Run Replay Scenarios`
-- `OML: Benchmark Runner`
-- `OML: Tracy Run Runner Benchmark`
+- `Obz Market Lab Linux: Build Development Image`
+- `Obz Market Lab Linux: Open Shell`
+- `Obz Market Lab Linux: Test GCC`
+- `Obz Market Lab Linux: Test Clang`
+
+macOS tasks include:
+
+- `Obz Market Lab macOS: Build Debug`
+- `Obz Market Lab macOS: Test All`
+- `Obz Market Lab macOS: Test Pipeline`
+- `Obz Market Lab macOS: Run Replay Demo`
+- `Obz Market Lab macOS: Run Replay Demo JSONL`
+- `Obz Market Lab macOS: Run Replay Scenarios`
+- `Obz Market Lab macOS: Benchmark Runner`
+- `Obz Market Lab macOS: Tracy Run Runner Benchmark`
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 
-- `OML: Debug Tests All`
-- `OML: Debug Tests Pipeline`
-- `OML: Debug Replay Demo`
-- `OML: Run Benchmarks Runner`
-- `OML: Run Tracy Benchmark Runner`
+- `Obz Market Lab macOS: Debug Tests All`
+- `Obz Market Lab macOS: Debug Tests Pipeline`
+- `Obz Market Lab macOS: Debug Replay Demo`
+- `Obz Market Lab macOS: Run Benchmarks Runner`
+- `Obz Market Lab macOS: Run Tracy Benchmark Runner`
 
 The default VS Code build uses the tagged ObzLib dependency. It does not require
 a local ObzLib checkout.
@@ -163,9 +170,10 @@ The scenario parser is intentionally file-oriented: comments, blank lines, and
 line-numbered parse errors are for editable replay files rather than live socket
 protocol input.
 
-In VS Code, run `OML: Run Replay Demo`, `OML: Run Replay Demo JSONL`, or
-`OML: Run Replay Scenarios` from `Tasks: Run Task`. Use
-`OML: Debug Replay Demo` from the Run and Debug panel.
+In VS Code, run `Obz Market Lab macOS: Run Replay Demo`,
+`Obz Market Lab macOS: Run Replay Demo JSONL`, or
+`Obz Market Lab macOS: Run Replay Scenarios` from `Tasks: Run Task`. Use
+`Obz Market Lab macOS: Debug Replay Demo` from the Run and Debug panel.
 
 ## Benchmarking
 

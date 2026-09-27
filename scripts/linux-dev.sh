@@ -16,9 +16,6 @@ Usage: scripts/linux-dev.sh <command>
 Commands:
   build-image       Build the Ubuntu development image
   shell             Open an interactive Linux shell with sources mounted
-  test-obz-gcc      Configure, build and test ObzLib with GCC
-  test-obz-clang    Configure, build and test ObzLib with Clang
-  test-obz-sanitize Configure, build and test ObzLib with GCC, ASan and UBSan
   test-market-gcc   Configure, build and test Market Lab with GCC
   test-market-clang Configure, build and test Market Lab with Clang
 
@@ -41,37 +38,6 @@ run_linux() {
         --mount "type=volume,source=${build_volume},target=/build" \
         "${image}" \
         bash -lc "$1"
-}
-
-test_obz() {
-    local compiler="$1"
-    local build_name="$2"
-
-    run_linux "set -e
-cmake -S /workspace/obz -B /build/${build_name} \\
-  -G Ninja \\
-  -DCMAKE_BUILD_TYPE=Debug \\
-  -DCMAKE_CXX_COMPILER=${compiler} \\
-  -DOBZ_BUILD_TESTS=ON \\
-  -DOBZ_BUILD_EXAMPLES=OFF
-cmake --build /build/${build_name} --parallel 4
-ctest --test-dir /build/${build_name} --output-on-failure --timeout 60"
-}
-
-test_obz_sanitized() {
-    run_linux "set -e
-cmake -S /workspace/obz -B /build/obz-gcc-asan-ubsan \\
-  -G Ninja \\
-  -DCMAKE_BUILD_TYPE=Debug \\
-  -DCMAKE_CXX_COMPILER=g++ \\
-  -DOBZ_BUILD_TESTS=ON \\
-  -DOBZ_BUILD_EXAMPLES=OFF \\
-  -DOBZ_ENABLE_ASAN_UBSAN=ON
-cmake --build /build/obz-gcc-asan-ubsan --parallel 4
-ctest --test-dir /build/obz-gcc-asan-ubsan \\
-  --exclude-regex '^obz_package_consumer$' \\
-  --output-on-failure \\
-  --timeout 60"
 }
 
 test_market() {
@@ -101,18 +67,6 @@ case "${1:-}" in
             --mount "type=bind,source=${market_lab_source},target=/workspace/market-lab,readonly" \
             --mount "type=volume,source=${build_volume},target=/build" \
             "${image}"
-        ;;
-    test-obz-gcc)
-        require_obz_source
-        test_obz g++ obz-gcc
-        ;;
-    test-obz-clang)
-        require_obz_source
-        test_obz clang++ obz-clang
-        ;;
-    test-obz-sanitize)
-        require_obz_source
-        test_obz_sanitized
         ;;
     test-market-gcc)
         require_obz_source

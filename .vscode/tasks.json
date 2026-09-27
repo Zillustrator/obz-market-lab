@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "OML Linux: Build Development Image",
+      "label": "Obz Market Lab Linux: Build Development Image",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/linux-dev.sh",
       "args": [
@@ -14,7 +14,7 @@
       "problemMatcher": []
     },
     {
-      "label": "OML Linux: Open Shell",
+      "label": "Obz Market Lab Linux: Open Shell",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/linux-dev.sh",
       "args": [
@@ -23,53 +23,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML Linux: Build Development Image",
+      "dependsOn": "Obz Market Lab Linux: Build Development Image",
       "problemMatcher": []
     },
     {
-      "label": "OML Linux: Test ObzLib GCC",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/linux-dev.sh",
-      "args": [
-        "test-obz-gcc"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "dependsOn": "OML Linux: Build Development Image",
-      "group": "test",
-      "problemMatcher": []
-    },
-    {
-      "label": "OML Linux: Test ObzLib Clang",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/linux-dev.sh",
-      "args": [
-        "test-obz-clang"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "dependsOn": "OML Linux: Build Development Image",
-      "group": "test",
-      "problemMatcher": []
-    },
-    {
-      "label": "OML Linux: Test ObzLib ASan + UBSan",
-      "type": "shell",
-      "command": "${workspaceFolder}/scripts/linux-dev.sh",
-      "args": [
-        "test-obz-sanitize"
-      ],
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "dependsOn": "OML Linux: Build Development Image",
-      "group": "test",
-      "problemMatcher": []
-    },
-    {
-      "label": "OML Linux: Test Market Lab GCC",
+      "label": "Obz Market Lab Linux: Test GCC",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/linux-dev.sh",
       "args": [
@@ -78,12 +36,12 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML Linux: Build Development Image",
+      "dependsOn": "Obz Market Lab Linux: Build Development Image",
       "group": "test",
       "problemMatcher": []
     },
     {
-      "label": "OML Linux: Test Market Lab Clang",
+      "label": "Obz Market Lab Linux: Test Clang",
       "type": "shell",
       "command": "${workspaceFolder}/scripts/linux-dev.sh",
       "args": [
@@ -92,12 +50,12 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML Linux: Build Development Image",
+      "dependsOn": "Obz Market Lab Linux: Build Development Image",
       "group": "test",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Configure Debug",
+      "label": "Obz Market Lab macOS: Configure Debug",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -114,7 +72,7 @@
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Build Debug",
+      "label": "Obz Market Lab macOS: Build Debug",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -125,7 +83,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Configure Debug",
+      "dependsOn": "Obz Market Lab macOS: Configure Debug",
       "group": {
         "kind": "build",
         "isDefault": true
@@ -133,7 +91,7 @@
       "problemMatcher": "$gcc"
     },
     {
-      "label": "OML macOS: Test All",
+      "label": "Obz Market Lab macOS: Test All",
       "type": "shell",
       "command": "ctest",
       "args": [
@@ -144,7 +102,7 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Debug",
+      "dependsOn": "Obz Market Lab macOS: Build Debug",
       "group": {
         "kind": "test",
         "isDefault": true
@@ -152,7 +110,7 @@
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Test Pipeline",
+      "label": "Obz Market Lab macOS: Test Pipeline",
       "type": "shell",
       "command": "${workspaceFolder}/build/tests/obz_market_engine_tests",
       "args": [
@@ -161,22 +119,22 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Debug",
+      "dependsOn": "Obz Market Lab macOS: Build Debug",
       "group": "test",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Run Replay Demo",
+      "label": "Obz Market Lab macOS: Run Replay Demo",
       "type": "shell",
       "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Debug",
+      "dependsOn": "Obz Market Lab macOS: Build Debug",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Run Replay Demo JSONL",
+      "label": "Obz Market Lab macOS: Run Replay Demo JSONL",
       "type": "shell",
       "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
       "args": [
@@ -186,11 +144,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Debug",
+      "dependsOn": "Obz Market Lab macOS: Build Debug",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Run Replay Scenarios",
+      "label": "Obz Market Lab macOS: Run Replay Scenarios",
       "type": "shell",
       "command": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
       "args": [
@@ -200,11 +158,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Debug",
+      "dependsOn": "Obz Market Lab macOS: Build Debug",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Configure Bench Release",
+      "label": "Obz Market Lab macOS: Configure Bench Release",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -223,7 +181,7 @@
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Build Bench Release",
+      "label": "Obz Market Lab macOS: Build Bench Release",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -236,11 +194,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Configure Bench Release",
+      "dependsOn": "Obz Market Lab macOS: Configure Bench Release",
       "problemMatcher": "$gcc"
     },
     {
-      "label": "OML macOS: Benchmark Runner",
+      "label": "Obz Market Lab macOS: Benchmark Runner",
       "type": "shell",
       "command": "${workspaceFolder}/build-bench-release/benchmarks/obz_market_engine_benchmarks",
       "args": [
@@ -249,11 +207,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Bench Release",
+      "dependsOn": "Obz Market Lab macOS: Build Bench Release",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Configure Tracy Release",
+      "label": "Obz Market Lab macOS: Configure Tracy Release",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -273,7 +231,7 @@
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Build Tracy Release",
+      "label": "Obz Market Lab macOS: Build Tracy Release",
       "type": "shell",
       "command": "cmake",
       "args": [
@@ -286,11 +244,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Configure Tracy Release",
+      "dependsOn": "Obz Market Lab macOS: Configure Tracy Release",
       "problemMatcher": "$gcc"
     },
     {
-      "label": "OML macOS: Tracy Run Runner Benchmark",
+      "label": "Obz Market Lab macOS: Tracy Run Runner Benchmark",
       "type": "shell",
       "command": "${workspaceFolder}/build-tracy-release/benchmarks/obz_market_engine_benchmarks",
       "args": [
@@ -300,11 +258,11 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": "OML macOS: Build Tracy Release",
+      "dependsOn": "Obz Market Lab macOS: Build Tracy Release",
       "problemMatcher": []
     },
     {
-      "label": "OML macOS: Tracy Open Profiler",
+      "label": "Obz Market Lab macOS: Tracy Open Profiler",
       "type": "shell",
       "command": "tracy-profiler",
       "options": {

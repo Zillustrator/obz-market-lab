@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "OML macOS: Debug Tests All",
+      "name": "Obz Market Lab macOS: Debug Tests All",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
@@ -10,10 +10,10 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML macOS: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML macOS: Debug Tests Pipeline",
+      "name": "Obz Market Lab macOS: Debug Tests Pipeline",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
@@ -23,10 +23,10 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML macOS: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML macOS: Debug Replay Demo",
+      "name": "Obz Market Lab macOS: Debug Replay Demo",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
@@ -34,10 +34,10 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML macOS: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML macOS: Run Benchmarks Runner",
+      "name": "Obz Market Lab macOS: Run Benchmarks Runner",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build-bench-release/benchmarks/obz_market_engine_benchmarks",
@@ -47,10 +47,10 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML macOS: Build Bench Release"
+      "preLaunchTask": "Obz Market Lab macOS: Build Bench Release"
     },
     {
-      "name": "OML macOS: Run Tracy Benchmark Runner",
+      "name": "Obz Market Lab macOS: Run Tracy Benchmark Runner",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build-tracy-release/benchmarks/obz_market_engine_benchmarks",
@@ -61,7 +61,7 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML macOS: Build Tracy Release"
+      "preLaunchTask": "Obz Market Lab macOS: Build Tracy Release"
     }
   ]
 }
