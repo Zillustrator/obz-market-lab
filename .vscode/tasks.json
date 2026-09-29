@@ -125,7 +125,7 @@
     {
       "label": "Obz Market Lab macOS: Test Matching Runtime",
       "type": "shell",
-      "command": "${workspaceFolder}/build/components/matching_runtime/tests/obz_market_lab_matching_runtime_tests",
+      "command": "${workspaceFolder}/build/components/matching/runtime/tests/obz_market_lab_matching_runtime_tests",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -210,7 +210,7 @@
     {
       "label": "Obz Market Lab macOS: Benchmark Runner",
       "type": "shell",
-      "command": "${workspaceFolder}/build-bench-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
+      "command": "${workspaceFolder}/build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
       "args": [
         "--benchmark_filter=runner"
       ],
@@ -260,7 +260,7 @@
     {
       "label": "Obz Market Lab macOS: Tracy Run Runner Benchmark",
       "type": "shell",
-      "command": "${workspaceFolder}/build-tracy-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
+      "command": "${workspaceFolder}/build-tracy-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
       "args": [
         "--benchmark_filter=runner_submit_round_trip",
         "--benchmark_min_time=120s"

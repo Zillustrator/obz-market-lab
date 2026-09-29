@@ -1,6 +1,6 @@
 #pragma once
 
-#include <obz/market_lab/matching_runtime.hpp>
+#include <obz/market_lab/matching/runner.hpp>
 
 #include <cstddef>
 #include <string>
@@ -23,7 +23,7 @@ struct scenario_update {
 };
 
 struct scenario_snapshot {
-    matching_runtime::snapshot_command command;
+    matching::snapshot_command command;
 };
 
 using scenario_command = std::variant<

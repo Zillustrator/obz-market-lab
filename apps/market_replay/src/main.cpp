@@ -2,7 +2,7 @@
 #include "jsonl_writer.hpp"
 #include "scenario_parser.hpp"
 
-#include <obz/market_lab/matching_runtime.hpp>
+#include <obz/market_lab/matching/runner.hpp>
 
 #include <algorithm>
 #include <cstdint>
@@ -19,7 +19,6 @@
 namespace {
 
 using namespace obz::market_lab::matching;
-using namespace obz::market_lab::matching_runtime;
 using namespace obz::market_lab::replay;
 
 enum class output_format {
@@ -113,7 +112,7 @@ command_line_options parse_command_line(int argc, char** argv) {
 
 template <typename Writer>
 void execute_command(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const scenario_submit& command
 ) {
@@ -122,7 +121,7 @@ void execute_command(
 
 template <typename Writer>
 void execute_command(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const scenario_cancel& command
 ) {
@@ -131,7 +130,7 @@ void execute_command(
 
 template <typename Writer>
 void execute_command(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const scenario_update& command
 ) {
@@ -140,7 +139,7 @@ void execute_command(
 
 template <typename Writer>
 void execute_command(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const scenario_snapshot& command
 ) {
@@ -149,7 +148,7 @@ void execute_command(
 
 template <typename Writer>
 void execute_step(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const scenario_step& step,
     bool print_step_labels
@@ -172,7 +171,7 @@ void execute_step(
 
 template <typename Writer>
 void run_steps(
-    engine_runner& runner,
+    runner& runner,
     Writer& writer,
     const std::vector<scenario_step>& steps,
     bool print_step_labels
@@ -261,7 +260,7 @@ std::vector<std::filesystem::path> scenario_files_in(const std::filesystem::path
 
 template <typename Writer>
 void run_default_demo(Writer& writer, bool print_metadata) {
-    engine_runner runner{128};
+    runner runner{128};
     runner.start();
 
     if (print_metadata) {
@@ -281,7 +280,7 @@ void run_scenario_file(
 ) {
     const scenario_parser parser;
     const auto steps = parser.load(path.string());
-    engine_runner runner{128};
+    runner runner{128};
     runner.start();
 
     if (print_metadata) {

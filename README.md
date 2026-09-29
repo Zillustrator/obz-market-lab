@@ -19,7 +19,7 @@ benchmarks, and profiling.
 - Deterministic event output.
 - Versioned binary encoding and validation for top-of-book market-data updates.
 - Focused tests for matching behaviour.
-- Queue-backed engine runner that serialises commands onto an engine thread.
+- Queue-backed matching runner that serialises commands onto an engine thread.
 - Console replay demo that exercises the matching runtime.
 
 ## Architecture
@@ -31,7 +31,7 @@ scenario files / built-in demo
 market_replay app
         |
         v
-engine_runner  -- ObzLib bounded_blocking_queue -->  matching_engine
+runner  -- ObzLib bounded_blocking_queue -->  engine
                                                     |
                                                     v
                                              per-symbol order_book
@@ -40,12 +40,12 @@ engine_runner  -- ObzLib bounded_blocking_queue -->  matching_engine
                                       events and book snapshots
 ```
 
-The core `matching_engine` is deliberately single-threaded. It owns the active
+The core `engine` is deliberately single-threaded. It owns the active
 order index and routes commands to one `order_book` per symbol. Each
 `order_book` owns its bid and ask price levels, preserving price-time priority
 with ordered price maps and FIFO queues at each level.
 
-The `engine_runner` is the concurrency boundary. It serialises submit, update,
+The `runner` is the concurrency boundary. It serialises submit, update,
 cancel, and snapshot commands through an ObzLib bounded blocking queue and
 executes them on a dedicated engine thread.
 
@@ -55,7 +55,7 @@ packet handling can be tested deterministically. See
 `docs/market-data-protocol.md` for the current wire contract.
 
 The multicast demo runs a publisher and receiver as separate processes. The
-publisher submits commands through the queue-backed engine runner, selects the
+publisher submits commands through the queue-backed matching runner, selects the
 resulting top-of-book events, assigns feed sequence numbers and sends one
 encoded packet per UDP datagram. The receiver joins the configured group,
 validates and decodes each datagram, then prints the update.
@@ -65,10 +65,13 @@ its public headers, implementation, unit tests and focused benchmarks:
 
 ```text
 components/
-  matching/              Single-threaded order-book and matching logic
-  matching_runtime/      Queue-backed threaded execution
-  market_data_protocol/  Versioned packet encoding and decoding
-  market_data_feed/      Multicast publishing and receiving
+  matching/
+    engine/    Single-threaded order-book and matching logic
+    runtime/   Queue-backed threaded execution
+  market_data/
+    protocol/  Versioned packet encoding and decoding
+    feed/      Multicast publishing and receiving
+  tracing/     Shared optional instrumentation
 ```
 
 Public C++ APIs use the `obz::market_lab` namespace and include paths beginning
@@ -144,7 +147,7 @@ a local ObzLib checkout.
 ## Replay Demo
 
 The replay demo is a small console application that drives the queue-backed
-`engine_runner`, prints emitted events, and requests snapshots after key steps.
+`runner`, prints emitted events, and requests snapshots after key steps.
 It can run a built-in walkthrough, or it can replay a text scenario file.
 
 ```bash
@@ -247,8 +250,8 @@ cmake --build build-bench-release \
            obz_market_lab_matching_runtime_benchmarks \
   --parallel
 
-./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks
-./build-bench-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
+./build-bench-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks
+./build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
 ```
 
 See `docs/benchmarking.md` for benchmark details and useful command-line
@@ -257,7 +260,7 @@ options.
 ## Matching Runtime
 
 The matching engine remains a single-threaded domain object. The matching
-runtime adds an `engine_runner` that owns the engine on a worker thread and accepts
+runtime adds a `runner` that owns the engine on a worker thread and accepts
 submit, cancel, and snapshot commands through an ObzLib bounded blocking queue.
 
 ## Profiling
@@ -286,7 +289,7 @@ Start the Tracy profiler:
 Then run a benchmark long enough to connect:
 
 ```bash
-./build-tracy-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks \
+./build-tracy-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks \
   --benchmark_filter=crossing_limit_matches_price_levels/100 \
   --benchmark_min_time=120s
 ```

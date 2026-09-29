@@ -22,7 +22,7 @@ needed:
 Run a benchmark workload while the Tracy profiler is available:
 
 ```bash
-./build-tracy-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks \
+./build-tracy-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks \
   --benchmark_filter=resting_limit_submit \
   --benchmark_min_time=5s
 ```
@@ -31,7 +31,7 @@ Use the matching-runtime executable when profiling queue and worker-thread
 round trips:
 
 ```bash
-./build-tracy-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks \
+./build-tracy-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks \
   --benchmark_filter=runner_submit_round_trip \
   --benchmark_min_time=5s
 ```
@@ -40,10 +40,10 @@ round trips:
 
 The current instrumentation covers:
 
-- `matching_engine::submit`
-- `matching_engine::update`
-- `matching_engine::cancel`
-- `matching_engine::snapshot`
+- `engine::submit`
+- `engine::update`
+- `engine::cancel`
+- `engine::snapshot`
 - `order_book::submit`
 - `order_book::update`
 - `order_book::cancel`
@@ -52,7 +52,7 @@ The current instrumentation covers:
 - matching against price levels
 - resting order insertion
 - snapshot level creation
-- `engine_runner` enqueue, run-loop, and command-processing zones
+- `runner` enqueue, run-loop, and command-processing zones
 
 The zones are intentionally coarse. They should show which engine paths dominate
 before adding more detailed instrumentation inside loops or data-structure

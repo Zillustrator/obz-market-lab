@@ -14,7 +14,6 @@
 namespace obz::market_lab::replay {
 
 using namespace obz::market_lab::matching;
-using namespace obz::market_lab::matching_runtime;
 
 namespace {
 

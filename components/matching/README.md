@@ -1,9 +1,11 @@
 # Matching
 
-The matching component contains the deterministic, single-threaded order-book
-and matching logic. It owns order validation, price-time priority, active-order
-tracking, trades, top-of-book events and snapshots.
+The matching capability contains two separately buildable modules:
 
-It does not own threads, queues, sockets or wire encoding. Its public API is in
-`obz::market_lab::matching` and its unit tests and focused benchmarks live
-beside the implementation.
+- `engine` provides deterministic, single-threaded order-book and matching logic.
+- `runtime` owns an engine on a worker thread and exchanges commands and results
+  across an ObzLib bounded blocking queue.
+
+Both modules expose APIs in `obz::market_lab::matching`. Keeping their CMake
+targets separate allows code to use the domain engine without taking a runtime
+dependency on queues or threads.

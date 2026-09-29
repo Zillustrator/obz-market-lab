@@ -1,6 +1,6 @@
 #include <scenario_parser.hpp>
 
-#include <obz/market_lab/matching_runtime.hpp>
+#include <obz/market_lab/matching/runner.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -15,7 +15,6 @@
 namespace {
 
 using namespace obz::market_lab::matching;
-using namespace obz::market_lab::matching_runtime;
 using namespace obz::market_lab::replay;
 using Catch::Matchers::ContainsSubstring;
 

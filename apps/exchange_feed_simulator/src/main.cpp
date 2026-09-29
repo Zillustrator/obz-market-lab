@@ -1,5 +1,5 @@
 #include <obz/market_lab/market_data/multicast_publisher.hpp>
-#include <obz/market_lab/matching_runtime.hpp>
+#include <obz/market_lab/matching/runner.hpp>
 
 #include <charconv>
 #include <cstdint>
@@ -16,7 +16,6 @@
 namespace {
 
 using namespace obz::market_lab::matching;
-using namespace obz::market_lab::matching_runtime;
 using namespace obz::market_lab::market_data;
 
 constexpr std::string_view default_group{"239.255.0.1"};
@@ -73,7 +72,7 @@ int main(int argc, char** argv) {
         const auto port = argc == 3 ? parse_port(argv[2]) : default_port;
 
         multicast_publisher publisher{{group, port}};
-        engine_runner engine{64};
+        runner engine{64};
         engine.start();
 
         publish_events(

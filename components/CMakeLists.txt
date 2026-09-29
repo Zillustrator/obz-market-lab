@@ -1,4 +1,3 @@
+add_subdirectory(tracing)
 add_subdirectory(matching)
-add_subdirectory(matching_runtime)
-add_subdirectory(market_data_protocol)
-add_subdirectory(market_data_feed)
+add_subdirectory(market_data)
