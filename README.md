@@ -20,7 +20,7 @@ benchmarks, and profiling.
 - Versioned binary encoding and validation for top-of-book market-data updates.
 - Focused tests for matching behaviour.
 - Queue-backed engine runner that serialises commands onto an engine thread.
-- Console replay demo that exercises the queued pipeline.
+- Console replay demo that exercises the matching runtime.
 
 ## Architecture
 
@@ -59,6 +59,20 @@ publisher submits commands through the queue-backed engine runner, selects the
 resulting top-of-book events, assigns feed sequence numbers and sends one
 encoded packet per UDP datagram. The receiver joins the configured group,
 validates and decodes each datagram, then prints the update.
+
+Production code is organised as self-contained components. Each component owns
+its public headers, implementation, unit tests and focused benchmarks:
+
+```text
+components/
+  matching/              Single-threaded order-book and matching logic
+  matching_runtime/      Queue-backed threaded execution
+  market_data_protocol/  Versioned packet encoding and decoding
+  market_data_feed/      Multicast publishing and receiving
+```
+
+Public C++ APIs use the `obz::market_lab` namespace and include paths beginning
+with `obz/market_lab`.
 
 ## Matching Rules
 
@@ -107,7 +121,7 @@ macOS tasks include:
 
 - `Obz Market Lab macOS: Build Debug`
 - `Obz Market Lab macOS: Test All`
-- `Obz Market Lab macOS: Test Pipeline`
+- `Obz Market Lab macOS: Test Matching Runtime`
 - `Obz Market Lab macOS: Run Replay Demo`
 - `Obz Market Lab macOS: Run Replay Demo JSONL`
 - `Obz Market Lab macOS: Run Replay Scenarios`
@@ -116,8 +130,10 @@ macOS tasks include:
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 
-- `Obz Market Lab macOS: Debug Tests All`
-- `Obz Market Lab macOS: Debug Tests Pipeline`
+- `Obz Market Lab macOS: Debug Matching Tests`
+- `Obz Market Lab macOS: Debug Matching Runtime Tests`
+- `Obz Market Lab macOS: Debug Market Data Protocol Tests`
+- `Obz Market Lab macOS: Debug Replay Tests`
 - `Obz Market Lab macOS: Debug Replay Demo`
 - `Obz Market Lab macOS: Run Benchmarks Runner`
 - `Obz Market Lab macOS: Run Tracy Benchmark Runner`
@@ -189,25 +205,25 @@ Start the receiver before the publisher. Both applications default to multicast
 group `239.255.0.1` and UDP port `30001`:
 
 ```bash
-./build/apps/market_data/obz_market_data_receiver
+./build/apps/market_data_listener/obz_market_data_listener
 ```
 
 In a second terminal:
 
 ```bash
-./build/apps/market_data/obz_market_data_publisher
+./build/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator
 ```
 
 The receiver accepts optional group, port, interface address and packet count:
 
 ```text
-obz_market_data_receiver [group] [port] [interface] [count]
+obz_market_data_listener [group] [port] [interface] [count]
 ```
 
 The publisher accepts an optional group and port:
 
 ```text
-obz_market_data_publisher [group] [port]
+obz_market_exchange_feed_simulator [group] [port]
 ```
 
 Interface `0.0.0.0` asks the operating system to choose the receiving interface.
@@ -227,19 +243,21 @@ cmake -S . -B build-bench-release \
   -DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON
 
 cmake --build build-bench-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
+           obz_market_lab_matching_runtime_benchmarks \
   --parallel
 
-./build-bench-release/benchmarks/obz_market_engine_benchmarks
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks
+./build-bench-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
 ```
 
 See `docs/benchmarking.md` for benchmark details and useful command-line
 options.
 
-## Pipeline
+## Matching Runtime
 
-The matching engine remains a single-threaded domain object. The pipeline layer
-adds an `engine_runner` that owns the engine on a worker thread and accepts
+The matching engine remains a single-threaded domain object. The matching
+runtime adds an `engine_runner` that owns the engine on a worker thread and accepts
 submit, cancel, and snapshot commands through an ObzLib bounded blocking queue.
 
 ## Profiling
@@ -255,7 +273,7 @@ cmake -S . -B build-tracy-release \
   -DOBZ_MARKET_LAB_ENABLE_TRACY=ON
 
 cmake --build build-tracy-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
   --parallel
 ```
 
@@ -268,7 +286,7 @@ Start the Tracy profiler:
 Then run a benchmark long enough to connect:
 
 ```bash
-./build-tracy-release/benchmarks/obz_market_engine_benchmarks \
+./build-tracy-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks \
   --benchmark_filter=crossing_limit_matches_price_levels/100 \
   --benchmark_min_time=120s
 ```

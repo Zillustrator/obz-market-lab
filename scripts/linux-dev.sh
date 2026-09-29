@@ -67,11 +67,11 @@ cmake -S /workspace/market-lab -B /build/market-gcc \
   -DOBZ_MARKET_LAB_BUILD_TESTS=ON \
   -DOBZ_MARKET_LAB_BUILD_APPS=ON
 cmake --build /build/market-gcc \
-  --target obz_market_data_publisher obz_market_data_receiver \
+  --target obz_market_exchange_feed_simulator obz_market_data_listener \
   --parallel 4
 
 receiver_log="$(mktemp)"
-timeout 10 /build/market-gcc/apps/market_data/obz_market_data_receiver \
+timeout 10 /build/market-gcc/apps/market_data_listener/obz_market_data_listener \
   >"${receiver_log}" 2>&1 &
 receiver_pid=$!
 
@@ -94,7 +94,7 @@ if ! grep -q "^listening " "${receiver_log}"; then
   exit 1
 fi
 
-/build/market-gcc/apps/market_data/obz_market_data_publisher
+/build/market-gcc/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator
 
 if ! wait "${receiver_pid}"; then
   cat "${receiver_log}"

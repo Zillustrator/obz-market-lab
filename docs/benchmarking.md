@@ -1,6 +1,7 @@
 # Benchmarking
 
-Obz Market Lab uses Google Benchmark for focused C++ engine benchmarks.
+Obz Market Lab uses Google Benchmark for focused matching and matching-runtime
+benchmarks.
 
 Benchmarks are disabled by default so normal development builds stay fast and do
 not fetch benchmark dependencies unless requested.
@@ -16,22 +17,24 @@ Use a dedicated Release build directory for benchmark runs:
   -DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON
 
 /opt/homebrew/bin/cmake --build build-bench-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
+           obz_market_lab_matching_runtime_benchmarks \
   --parallel
 ```
 
 Run the benchmark executable directly:
 
 ```bash
-./build-bench-release/benchmarks/obz_market_engine_benchmarks
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks
+./build-bench-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
 ```
 
 Useful Google Benchmark options:
 
 ```bash
-./build-bench-release/benchmarks/obz_market_engine_benchmarks --benchmark_min_time=1s
-./build-bench-release/benchmarks/obz_market_engine_benchmarks --benchmark_filter=cancel
-./build-bench-release/benchmarks/obz_market_engine_benchmarks --benchmark_format=json
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks --benchmark_min_time=1s
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks --benchmark_filter=cancel
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks --benchmark_format=json
 ```
 
 ## Current Coverage
@@ -76,7 +79,10 @@ Machine:
 - macOS 26.6.2
 
 ```bash
-./build-bench-release/benchmarks/obz_market_engine_benchmarks \
+./build-bench-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks \
+  --benchmark_min_time=0.1s
+
+./build-bench-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks \
   --benchmark_min_time=0.1s
 ```
 

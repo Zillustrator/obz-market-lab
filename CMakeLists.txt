@@ -48,19 +48,34 @@ if (OBZ_MARKET_LAB_ENABLE_TRACY)
     FetchContent_MakeAvailable(tracy)
 endif()
 
-add_subdirectory(cpp/engine)
-add_subdirectory(cpp/market_data)
-add_subdirectory(cpp/pipeline)
-
-if (OBZ_MARKET_LAB_BUILD_APPS)
-    add_subdirectory(apps)
-endif()
-
 if (OBZ_MARKET_LAB_BUILD_TESTS)
     enable_testing()
-    add_subdirectory(tests)
+
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.7.1
+    )
+
+    FetchContent_MakeAvailable(Catch2)
+    include(Catch)
 endif()
 
 if (OBZ_MARKET_LAB_BUILD_BENCHMARKS)
-    add_subdirectory(benchmarks)
+    set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
+    set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
+
+    FetchContent_Declare(
+        benchmark
+        GIT_REPOSITORY https://github.com/google/benchmark.git
+        GIT_TAG v1.9.1
+    )
+
+    FetchContent_MakeAvailable(benchmark)
+endif()
+
+add_subdirectory(components)
+
+if (OBZ_MARKET_LAB_BUILD_APPS)
+    add_subdirectory(apps)
 endif()

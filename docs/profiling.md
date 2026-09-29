@@ -14,15 +14,25 @@ needed:
   -DOBZ_MARKET_LAB_ENABLE_TRACY=ON
 
 /opt/homebrew/bin/cmake --build build-tracy-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
+           obz_market_lab_matching_runtime_benchmarks \
   --parallel
 ```
 
 Run a benchmark workload while the Tracy profiler is available:
 
 ```bash
-./build-tracy-release/benchmarks/obz_market_engine_benchmarks \
+./build-tracy-release/components/matching/benchmarks/obz_market_lab_matching_benchmarks \
   --benchmark_filter=resting_limit_submit \
+  --benchmark_min_time=5s
+```
+
+Use the matching-runtime executable when profiling queue and worker-thread
+round trips:
+
+```bash
+./build-tracy-release/components/matching_runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks \
+  --benchmark_filter=runner_submit_round_trip \
   --benchmark_min_time=5s
 ```
 

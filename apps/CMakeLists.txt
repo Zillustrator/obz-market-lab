@@ -1,2 +1,3 @@
 add_subdirectory(market_replay)
-add_subdirectory(market_data)
+add_subdirectory(exchange_feed_simulator)
+add_subdirectory(market_data_listener)
