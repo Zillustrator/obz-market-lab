@@ -1,6 +1,6 @@
 #pragma once
 
-#include <obz/market_lab/matching/events.hpp>
+#include <obz/market_lab/market_data/feed_encoder.hpp>
 
 #include <obz/transport/udp_socket.hpp>
 
@@ -33,9 +33,9 @@ public:
     publish_result publish(std::span<const matching::event> events);
 
 private:
+    feed_encoder encoder_;
     obz::transport::udp_socket socket_;
     obz::transport::endpoint destination_;
-    std::uint64_t next_sequence_{1};
 };
 
 } // namespace obz::market_lab::market_data
