@@ -2,12 +2,10 @@
 
 #include <obz/market_lab/matching/commands.hpp>
 
-#include <atomic>
 #include <cstddef>
 #include <future>
 #include <memory>
 #include <optional>
-#include <thread>
 #include <vector>
 
 namespace obz::market_lab::matching {
