@@ -239,4 +239,33 @@ decode_result decode(std::span<const std::byte> bytes) {
     }
 }
 
+std::string_view to_string(decode_error error) noexcept {
+    switch (error) {
+    case decode_error::header_truncated:
+        return "header_truncated";
+    case decode_error::invalid_signature:
+        return "invalid_signature";
+    case decode_error::unsupported_version:
+        return "unsupported_version";
+    case decode_error::unknown_message_type:
+        return "unknown_message_type";
+    case decode_error::invalid_sequence:
+        return "invalid_sequence";
+    case decode_error::body_truncated:
+        return "body_truncated";
+    case decode_error::body_length_mismatch:
+        return "body_length_mismatch";
+    case decode_error::invalid_symbol:
+        return "invalid_symbol";
+    case decode_error::invalid_side:
+        return "invalid_side";
+    case decode_error::invalid_flags:
+        return "invalid_flags";
+    case decode_error::invalid_book_state:
+        return "invalid_book_state";
+    }
+
+    return "unknown_decode_error";
+}
+
 } // namespace obz_market::market_data

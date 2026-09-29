@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <span>
+#include <string_view>
 #include <variant>
 #include <vector>
 
@@ -41,5 +42,6 @@ using decode_result = std::variant<packet, decode_error>;
 
 std::vector<std::byte> encode(const packet& value);
 decode_result decode(std::span<const std::byte> bytes);
+std::string_view to_string(decode_error error) noexcept;
 
 } // namespace obz_market::market_data

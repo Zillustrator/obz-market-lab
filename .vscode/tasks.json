@@ -55,6 +55,19 @@
       "problemMatcher": []
     },
     {
+      "label": "Obz Market Lab Linux: Run Multicast Demo",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/linux-dev.sh",
+      "args": [
+        "run-market-multicast"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Obz Market Lab Linux: Build Development Image",
+      "problemMatcher": []
+    },
+    {
       "label": "Obz Market Lab macOS: Configure Debug",
       "type": "shell",
       "command": "cmake",

@@ -1,5 +1,7 @@
 add_library(obz_market_market_data
     src/codec.cpp
+    src/multicast_publisher.cpp
+    src/multicast_receiver.cpp
 )
 
 add_library(obz_market::market_data ALIAS obz_market_market_data)
@@ -19,4 +21,5 @@ target_link_libraries(obz_market_market_data
         obz_market::engine
     PRIVATE
         obz::endian
+        obz::transport
 )

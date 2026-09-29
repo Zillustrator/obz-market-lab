@@ -28,7 +28,7 @@ else()
     FetchContent_Declare(
         obz
         GIT_REPOSITORY https://github.com/Zillustrator/obz.git
-        GIT_TAG v0.1.0
+        GIT_TAG f71f1e43e02976d420c58bb27d09725d899ed6bf
     )
 endif()
 

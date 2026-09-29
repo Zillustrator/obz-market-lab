@@ -1,1 +1,2 @@
 add_subdirectory(market_replay)
+add_subdirectory(market_data)

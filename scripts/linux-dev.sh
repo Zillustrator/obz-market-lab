@@ -18,6 +18,7 @@ Commands:
   shell             Open an interactive Linux shell with sources mounted
   test-market-gcc   Configure, build and test Market Lab with GCC
   test-market-clang Configure, build and test Market Lab with Clang
+  run-market-multicast Build and run the multicast publisher and receiver
 
 Set OBZ_SOURCE_DIR to override the default adjacent ObzLib checkout path.
 EOF
@@ -56,6 +57,54 @@ cmake --build /build/${build_name} --parallel 4
 ctest --test-dir /build/${build_name} --output-on-failure --timeout 60"
 }
 
+run_market_multicast() {
+    run_linux 'set -e
+cmake -S /workspace/market-lab -B /build/market-gcc \
+  -G Ninja \
+  -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_CXX_COMPILER=g++ \
+  -DOBZ_MARKET_LAB_OBZ_SOURCE_DIR=/workspace/obz \
+  -DOBZ_MARKET_LAB_BUILD_TESTS=ON \
+  -DOBZ_MARKET_LAB_BUILD_APPS=ON
+cmake --build /build/market-gcc \
+  --target obz_market_data_publisher obz_market_data_receiver \
+  --parallel 4
+
+receiver_log="$(mktemp)"
+timeout 10 /build/market-gcc/apps/market_data/obz_market_data_receiver \
+  >"${receiver_log}" 2>&1 &
+receiver_pid=$!
+
+cleanup() {
+  kill "${receiver_pid}" 2>/dev/null || true
+  rm -f "${receiver_log}"
+}
+trap cleanup EXIT
+
+for _ in $(seq 1 50); do
+  if grep -q "^listening " "${receiver_log}"; then
+    break
+  fi
+  sleep 0.1
+done
+
+if ! grep -q "^listening " "${receiver_log}"; then
+  cat "${receiver_log}"
+  echo "receiver did not become ready" >&2
+  exit 1
+fi
+
+/build/market-gcc/apps/market_data/obz_market_data_publisher
+
+if ! wait "${receiver_pid}"; then
+  cat "${receiver_log}"
+  echo "receiver failed or timed out" >&2
+  exit 1
+fi
+
+cat "${receiver_log}"'
+}
+
 case "${1:-}" in
     build-image)
         docker build -t "${image}" "${market_lab_source}/docker/linux-dev"
@@ -75,6 +124,10 @@ case "${1:-}" in
     test-market-clang)
         require_obz_source
         test_market clang++ market-clang
+        ;;
+    run-market-multicast)
+        require_obz_source
+        run_market_multicast
         ;;
     *)
         print_usage >&2

@@ -54,6 +54,12 @@ network byte layout. It is kept separate from socket transport so malformed
 packet handling can be tested deterministically. See
 `docs/market-data-protocol.md` for the current wire contract.
 
+The multicast demo runs a publisher and receiver as separate processes. The
+publisher submits commands through the queue-backed engine runner, selects the
+resulting top-of-book events, assigns feed sequence numbers and sends one
+encoded packet per UDP datagram. The receiver joins the configured group,
+validates and decodes each datagram, then prints the update.
+
 ## Matching Rules
 
 The engine implements deterministic price-time priority across independent
@@ -80,8 +86,9 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-To consume the published ObzLib `v0.1.0` tag instead, omit
-`OBZ_MARKET_LAB_OBZ_SOURCE_DIR`.
+To consume the pinned ObzLib revision instead, omit
+`OBZ_MARKET_LAB_OBZ_SOURCE_DIR`. The pinned revision includes the multicast
+membership API used by the market-data receiver.
 
 ## VS Code
 
@@ -94,6 +101,7 @@ to run project tasks. Linux tasks include:
 - `Obz Market Lab Linux: Open Shell`
 - `Obz Market Lab Linux: Test GCC`
 - `Obz Market Lab Linux: Test Clang`
+- `Obz Market Lab Linux: Run Multicast Demo`
 
 macOS tasks include:
 
@@ -174,6 +182,38 @@ In VS Code, run `Obz Market Lab macOS: Run Replay Demo`,
 `Obz Market Lab macOS: Run Replay Demo JSONL`, or
 `Obz Market Lab macOS: Run Replay Scenarios` from `Tasks: Run Task`. Use
 `Obz Market Lab macOS: Debug Replay Demo` from the Run and Debug panel.
+
+## Multicast Demo
+
+Start the receiver before the publisher. Both applications default to multicast
+group `239.255.0.1` and UDP port `30001`:
+
+```bash
+./build/apps/market_data/obz_market_data_receiver
+```
+
+In a second terminal:
+
+```bash
+./build/apps/market_data/obz_market_data_publisher
+```
+
+The receiver accepts optional group, port, interface address and packet count:
+
+```text
+obz_market_data_receiver [group] [port] [interface] [count]
+```
+
+The publisher accepts an optional group and port:
+
+```text
+obz_market_data_publisher [group] [port]
+```
+
+Interface `0.0.0.0` asks the operating system to choose the receiving interface.
+The Linux VS Code task `Obz Market Lab Linux: Run Multicast Demo` builds both
+applications, starts them as separate processes in one container, waits for
+receiver readiness and fails after ten seconds rather than blocking forever.
 
 ## Benchmarking
 
