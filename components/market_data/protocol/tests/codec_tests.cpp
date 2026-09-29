@@ -9,12 +9,12 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
+#include <string>
 #include <variant>
 #include <vector>
 
 namespace {
 
-using namespace obz::market_lab::matching;
 using namespace obz::market_lab::market_data;
 
 const packet& require_packet(const decode_result& result) {
@@ -32,26 +32,26 @@ decode_error require_error(const decode_result& result) {
 packet priced_update() {
     return packet{
         42,
-        book_updated{symbol{"ETH-USD"}, side::buy, price{101}, 7}
+        book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{101}, 7}
     };
 }
 
 void require_book_update(
     const packet& decoded,
     std::uint64_t sequence,
-    const symbol& instrument,
+    const std::string& symbol,
     side direction,
-    const std::optional<price>& best_price,
-    std::uint64_t total_size
+    const std::optional<std::uint64_t>& best_price,
+    std::uint64_t aggregate_size
 ) {
     REQUIRE(decoded.sequence == sequence);
 
-    const auto* update = std::get_if<book_updated>(&decoded.payload);
+    const auto* update = std::get_if<book_update>(&decoded.payload);
     REQUIRE(update != nullptr);
-    REQUIRE(update->instrument == instrument);
+    REQUIRE(update->symbol == symbol);
     REQUIRE(update->direction == direction);
     REQUIRE(update->best_price == best_price);
-    REQUIRE(update->total_size == total_size);
+    REQUIRE(update->aggregate_size == aggregate_size);
 }
 
 } // namespace
@@ -84,19 +84,19 @@ TEST_CASE("market-data codec round trips priced and empty book updates", "[marke
     require_book_update(
         require_packet(decode(encode(priced))),
         42,
-        symbol{"ETH-USD"},
+        std::string{"ETH-USD"},
         side::buy,
-        price{101},
+        std::uint64_t{101},
         7);
 
     const packet empty{
         43,
-        book_updated{symbol{"ETH-USD"}, side::sell, std::nullopt, 0}
+        book_update{std::string{"ETH-USD"}, side::sell, std::nullopt, 0}
     };
     require_book_update(
         require_packet(decode(encode(empty))),
         43,
-        symbol{"ETH-USD"},
+        std::string{"ETH-USD"},
         side::sell,
         std::nullopt,
         0);
@@ -104,13 +104,16 @@ TEST_CASE("market-data codec round trips priced and empty book updates", "[marke
 
 TEST_CASE("market-data encoder rejects non-canonical packets", "[market_data]") {
     REQUIRE_THROWS_AS(
-        encode(packet{0, book_updated{symbol{"ETH-USD"}, side::buy, price{100}, 2}}),
+        encode(packet{0, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{100}, 2}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        encode(packet{1, book_updated{symbol{""}, side::buy, price{100}, 2}}),
+        encode(packet{1, book_update{std::string{}, side::buy, std::uint64_t{100}, 2}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        encode(packet{1, book_updated{symbol{"ETH-USD"}, side::buy, price{100}, 0}}),
+        encode(packet{1, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{0}, 2}}),
+        std::invalid_argument);
+    REQUIRE_THROWS_AS(
+        encode(packet{1, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{100}, 0}}),
         std::invalid_argument);
 }
 

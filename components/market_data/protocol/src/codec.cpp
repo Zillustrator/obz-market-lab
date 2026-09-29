@@ -14,7 +14,6 @@
 
 namespace obz::market_lab::market_data {
 
-using namespace obz::market_lab::matching;
 namespace {
 
 namespace header_layout {
@@ -87,14 +86,14 @@ header_decode_result decode_header(std::span<const std::byte> bytes) {
 }
 
 std::vector<std::byte> encode_book_update(
-    const book_updated& update,
+    const book_update& update,
     std::uint64_t sequence
 ) {
-    if (update.instrument.empty()) {
+    if (update.symbol.empty()) {
         throw std::invalid_argument("book update symbol must not be empty");
     }
 
-    if (update.instrument.value.size() > std::numeric_limits<std::uint16_t>::max()) {
+    if (update.symbol.size() > std::numeric_limits<std::uint16_t>::max()) {
         throw std::invalid_argument("book update symbol is too long");
     }
 
@@ -110,14 +109,18 @@ std::vector<std::byte> encode_book_update(
         throw std::invalid_argument("book update has an invalid side");
     }
 
-    if (update.best_price.has_value() != (update.total_size > 0)) {
+    if (update.best_price.has_value() && *update.best_price == 0) {
+        throw std::invalid_argument("book update price must be positive");
+    }
+
+    if (update.best_price.has_value() != (update.aggregate_size > 0)) {
         throw std::invalid_argument(
             "book update must pair a price with positive aggregate size");
     }
 
     const auto packet_size =
         header_layout::size + book_update_layout::fixed_size +
-        update.instrument.value.size();
+        update.symbol.size();
     std::vector<std::byte> bytes(packet_size);
     encode_header(bytes, message_type::book_updated, sequence);
 
@@ -128,15 +131,15 @@ std::vector<std::byte> encode_book_update(
         update.best_price.has_value() ? book_update_layout::has_price_flag : std::uint8_t{0});
     write_and_advance(
         destination,
-        update.best_price.has_value() ? update.best_price->value : std::uint64_t{0});
-    write_and_advance(destination, update.total_size);
+        update.best_price.value_or(0));
+    write_and_advance(destination, update.aggregate_size);
     write_and_advance(
         destination,
-        static_cast<std::uint16_t>(update.instrument.value.size()));
+        static_cast<std::uint16_t>(update.symbol.size()));
 
     std::transform(
-        update.instrument.value.begin(),
-        update.instrument.value.end(),
+        update.symbol.begin(),
+        update.symbol.end(),
         destination.begin(),
         [](unsigned char character) { return static_cast<std::byte>(character); });
 
@@ -177,13 +180,13 @@ decode_result decode_book_update(
         return decode_error::invalid_book_state;
     }
 
-    std::optional<price> best_price;
+    std::optional<std::uint64_t> best_price;
     if (has_price) {
         best_price.emplace(encoded_price);
     }
 
-    const auto total_size = read_and_advance<std::uint64_t>(source);
-    if (has_price != (total_size > 0)) {
+    const auto aggregate_size = read_and_advance<std::uint64_t>(source);
+    if (has_price != (aggregate_size > 0)) {
         return decode_error::invalid_book_state;
     }
 
@@ -196,15 +199,15 @@ decode_result decode_book_update(
         return decode_error::body_length_mismatch;
     }
 
-    std::string instrument;
-    instrument.reserve(symbol_length);
+    std::string symbol;
+    symbol.reserve(symbol_length);
     for (const auto value : source) {
-        instrument.push_back(static_cast<char>(std::to_integer<unsigned char>(value)));
+        symbol.push_back(static_cast<char>(std::to_integer<unsigned char>(value)));
     }
 
     return packet{
         sequence,
-        book_updated{symbol{std::move(instrument)}, decoded_side, best_price, total_size}
+        book_update{std::move(symbol), decoded_side, best_price, aggregate_size}
     };
 }
 
@@ -218,7 +221,7 @@ std::vector<std::byte> encode(const packet& value) {
     return std::visit(
         [&](const auto& payload) {
             using payload_type = std::decay_t<decltype(payload)>;
-            static_assert(std::is_same_v<payload_type, book_updated>);
+            static_assert(std::is_same_v<payload_type, book_update>);
             return encode_book_update(payload, value.sequence);
         },
         value.payload);

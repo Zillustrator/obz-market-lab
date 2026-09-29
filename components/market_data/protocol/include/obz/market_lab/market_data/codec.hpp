@@ -1,12 +1,11 @@
 #pragma once
 
-#include <obz/market_lab/matching/events.hpp>
+#include <obz/market_lab/market_data/messages.hpp>
 
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string_view>
-#include <variant>
 #include <vector>
 
 namespace obz::market_lab::market_data {
@@ -16,8 +15,6 @@ inline constexpr std::uint16_t protocol_version{1};
 enum class message_type : std::uint16_t {
     book_updated = 1
 };
-
-using message = std::variant<matching::book_updated>;
 
 struct packet {
     std::uint64_t sequence{};

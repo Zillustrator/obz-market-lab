@@ -4,6 +4,10 @@ The first Market Lab feed message carries one top-of-book update. The format is
 deliberately small, versioned, and independent of C++ object layout. Every
 multi-byte integer uses network byte order (big endian).
 
+The protocol owns this message model. Matching-engine events are translated at
+the feed boundary, so engine-specific types and event definitions are not part
+of the wire contract.
+
 ## Packet structure
 
 Every packet contains the same fixed-size header followed by one

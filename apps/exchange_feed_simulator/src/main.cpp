@@ -15,6 +15,8 @@
 
 namespace {
 
+namespace matching = obz::market_lab::matching;
+
 using namespace obz::market_lab::matching;
 using namespace obz::market_lab::market_data;
 
@@ -36,7 +38,7 @@ std::uint16_t parse_port(std::string_view text) {
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    side direction,
+    matching::side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
@@ -77,10 +79,14 @@ int main(int argc, char** argv) {
 
         publish_events(
             publisher,
-            engine.submit(submit_command{make_limit_order(1, 1, side::buy, 100, 10)}).get());
+            engine.submit(
+                submit_command{make_limit_order(1, 1, matching::side::buy, 100, 10)}
+            ).get());
         publish_events(
             publisher,
-            engine.submit(submit_command{make_limit_order(2, 1, side::sell, 101, 8)}).get());
+            engine.submit(
+                submit_command{make_limit_order(2, 1, matching::side::sell, 101, 8)}
+            ).get());
         publish_events(
             publisher,
             engine.cancel(cancel_command{cancel_order{

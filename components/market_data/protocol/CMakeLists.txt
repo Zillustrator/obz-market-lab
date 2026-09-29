@@ -18,8 +18,6 @@ target_compile_features(obz_market_lab_market_data_protocol
 )
 
 target_link_libraries(obz_market_lab_market_data_protocol
-    PUBLIC
-        obz_market_lab::matching
     PRIVATE
         obz::endian
 )

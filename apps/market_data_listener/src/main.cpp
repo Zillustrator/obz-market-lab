@@ -13,7 +13,6 @@
 
 namespace {
 
-using namespace obz::market_lab::matching;
 using namespace obz::market_lab::market_data;
 
 constexpr std::string_view default_group{"239.255.0.1"};
@@ -38,20 +37,20 @@ std::string_view side_name(side value) {
 }
 
 void print_packet(const packet& decoded) {
-    const auto& update = std::get<book_updated>(decoded.payload);
+    const auto& update = std::get<book_update>(decoded.payload);
 
     std::cout << "received sequence=" << decoded.sequence
-              << " symbol=" << update.instrument.value
+              << " symbol=" << update.symbol
               << " side=" << side_name(update.direction)
               << " best_price=";
 
     if (update.best_price) {
-        std::cout << update.best_price->value;
+        std::cout << *update.best_price;
     } else {
         std::cout << "none";
     }
 
-    std::cout << " total_size=" << update.total_size << '\n';
+    std::cout << " aggregate_size=" << update.aggregate_size << '\n';
 }
 
 } // namespace

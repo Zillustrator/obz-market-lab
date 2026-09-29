@@ -49,10 +49,12 @@ The `runner` is the concurrency boundary. It serialises submit, update,
 cancel, and snapshot commands through an ObzLib bounded blocking queue and
 executes them on a dedicated engine thread.
 
-The market-data codec converts `book_updated` events to and from an explicit
-network byte layout. It is kept separate from socket transport so malformed
-packet handling can be tested deterministically. See
-`docs/market-data-protocol.md` for the current wire contract.
+The market-data protocol owns wire-facing messages and converts them to and
+from an explicit network byte layout. It does not depend on the matching
+component. The feed component translates matching events into protocol
+messages and handles socket transport, leaving malformed-packet behavior easy
+to test deterministically. See `docs/market-data-protocol.md` for the current
+wire contract.
 
 The multicast demo runs a publisher and receiver as separate processes. The
 publisher submits commands through the queue-backed matching runner, selects the
