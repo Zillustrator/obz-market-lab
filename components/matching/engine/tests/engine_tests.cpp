@@ -1,4 +1,4 @@
-#include <obz/market_lab/matching.hpp>
+#include <obz/market_lab/matching/engine.hpp>
 
 #include <catch2/catch_test_macros.hpp>
 
