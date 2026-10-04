@@ -48,8 +48,21 @@ and then run the exchange feed simulator in another terminal:
 
 The current simulator sends three updates. That is enough to verify zone names
 and nesting in Tracy, but it is not a representative profiling workload or a
-basis for performance conclusions. A repeatable sustained-load publisher is a
-separate follow-up.
+basis for performance conclusions. For a repeatable ordered load, start the
+listener and publisher in separate terminals after Tracy connects:
+
+```bash
+./build-tracy-release/apps/market_data_listener/obz_market_data_listener \
+  --stop-after 100000 --quiet
+
+./build/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator \
+  --messages 100000 --burst-size 64 --interval-us 0 --quiet
+```
+
+Vary one input at a time when comparing captures. `--burst-size` controls how
+many already-generated events are sent back-to-back, while `--interval-us`
+controls the pause between bursts. The first pass is intentionally ordered;
+fault injection and reordered delivery remain separate workloads.
 
 ## Instrumented Areas
 

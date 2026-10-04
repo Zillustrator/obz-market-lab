@@ -3,11 +3,13 @@
 
 #include <cerrno>
 #include <charconv>
+#include <chrono>
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <iostream>
+#include <optional>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -28,6 +30,24 @@ constexpr std::uint16_t default_port{30001};
 constexpr std::string_view default_interface{"0.0.0.0"};
 constexpr std::size_t maximum_pending_packets{64};
 constexpr std::uint64_t maximum_sequence_gap{64};
+
+struct listener_options {
+    std::string group{default_group};
+    std::uint16_t port{default_port};
+    std::string interface_address{default_interface};
+    std::optional<std::size_t> stop_after;
+    bool quiet{};
+};
+
+struct listener_counters {
+    std::size_t datagrams{};
+    std::size_t decoded{};
+    std::size_t delivered{};
+    std::size_t buffered{};
+    std::size_t rejected{};
+    std::size_t truncated{};
+    std::size_t malformed{};
+};
 
 volatile std::sig_atomic_t shutdown_signal_received{};
 
@@ -66,6 +86,43 @@ T parse_positive_integer(std::string_view text, std::string_view name) {
     }
 
     return value;
+}
+
+listener_options parse_options(int argc, char** argv) {
+    listener_options options;
+    std::size_t positional_index{};
+
+    for (int index = 1; index < argc; ++index) {
+        const std::string_view argument{argv[index]};
+        const auto next_value = [&](std::string_view name) -> std::string_view {
+            if (++index >= argc) {
+                throw std::invalid_argument{std::string{name} + " requires a value"};
+            }
+            return argv[index];
+        };
+
+        if (argument == "--stop-after") {
+            options.stop_after = parse_positive_integer<std::size_t>(
+                next_value(argument), "stop-after packet count");
+        } else if (argument == "--quiet") {
+            options.quiet = true;
+        } else if (argument.starts_with('-')) {
+            throw std::invalid_argument{"unknown option: " + std::string{argument}};
+        } else if (positional_index == 0) {
+            options.group = argument;
+            ++positional_index;
+        } else if (positional_index == 1) {
+            options.port = parse_positive_integer<std::uint16_t>(argument, "port");
+            ++positional_index;
+        } else if (positional_index == 2) {
+            options.interface_address = argument;
+            ++positional_index;
+        } else {
+            throw std::invalid_argument{"too many positional arguments"};
+        }
+    }
+
+    return options;
 }
 
 std::string_view side_name(side value) {
@@ -113,26 +170,19 @@ void print_processing_error(sequence_result result, std::uint64_t sequence) {
 
 int main(int argc, char** argv) {
     try {
-        if (argc > 4) {
-            throw std::invalid_argument{
-                "usage: obz_market_data_listener [group] [port] [interface]"};
-        }
-
-        const auto group = argc >= 2 ? std::string{argv[1]} : std::string{default_group};
-        const auto port = argc >= 3
-            ? parse_positive_integer<std::uint16_t>(argv[2], "port")
-            : default_port;
-        const auto interface_address = argc >= 4
-            ? std::string{argv[3]}
-            : std::string{default_interface};
+        const auto options = parse_options(argc, argv);
 
         install_shutdown_handlers();
-        multicast_receiver receiver{{group, port, interface_address}};
-        std::cout << "listening group=" << group
-                  << " port=" << port
-                  << " interface=" << interface_address << std::endl;
+        multicast_receiver receiver{{
+            options.group, options.port, options.interface_address}};
+        std::cout << "listening group=" << options.group
+                  << " port=" << options.port
+                  << " interface=" << options.interface_address << std::endl;
 
         bool received_invalid_packet{};
+        listener_counters counters;
+        std::optional<std::chrono::steady_clock::time_point> first_datagram;
+        std::optional<std::chrono::steady_clock::time_point> last_delivery;
         processor packet_processor{
             processor_config{
                 .sequence_limits = sequenced_buffer_limits{
@@ -154,7 +204,15 @@ int main(int argc, char** argv) {
                 throw;
             }
 
+            const auto received_at = std::chrono::steady_clock::now();
+            if (!first_datagram.has_value()) {
+                first_datagram = received_at;
+            }
+            ++counters.datagrams;
+
             if (const auto* truncated = std::get_if<truncated_packet>(&result)) {
+                ++counters.truncated;
+                ++counters.rejected;
                 std::cerr << "discarded truncated datagram from "
                           << truncated->sender.address << ':' << truncated->sender.port
                           << " bytes_retained=" << truncated->bytes_retained << '\n';
@@ -163,6 +221,8 @@ int main(int argc, char** argv) {
             }
 
             if (const auto* malformed = std::get_if<malformed_packet>(&result)) {
+                ++counters.malformed;
+                ++counters.rejected;
                 std::cerr << "discarded malformed packet from "
                           << malformed->sender.address << ':' << malformed->sender.port
                           << ": " << to_string(malformed->error) << '\n';
@@ -171,17 +231,34 @@ int main(int argc, char** argv) {
             }
 
             auto& received = std::get<received_packet>(result);
+            ++counters.decoded;
             const auto sequence = received.value.sequence;
             const auto processed = packet_processor.process(
                 std::move(received.value),
-                [](const packet& value) {
-                    print_packet(value);
+                [&](const packet& value) {
+                    if (!options.quiet) {
+                        print_packet(value);
+                    }
                 });
+            counters.delivered += processed.packets_delivered;
+            if (processed.packets_delivered != 0) {
+                last_delivery = std::chrono::steady_clock::now();
+            }
+
+            if (processed.ordering == sequence_result::buffered) {
+                ++counters.buffered;
+            }
 
             if (processed.ordering != sequence_result::ready &&
                 processed.ordering != sequence_result::buffered) {
+                ++counters.rejected;
                 print_processing_error(processed.ordering, sequence);
                 received_invalid_packet = true;
+            }
+
+            if (options.stop_after.has_value() &&
+                counters.delivered >= *options.stop_after) {
+                break;
             }
         }
 
@@ -194,11 +271,32 @@ int main(int argc, char** argv) {
             received_invalid_packet = true;
         }
 
+        std::int64_t elapsed_microseconds{};
+        if (first_datagram.has_value() && last_delivery.has_value()) {
+            elapsed_microseconds = std::chrono::duration_cast<std::chrono::microseconds>(
+                *last_delivery - *first_datagram).count();
+        }
+        const auto messages_per_second = elapsed_microseconds > 0
+            ? static_cast<double>(counters.delivered) * 1'000'000.0 /
+                static_cast<double>(elapsed_microseconds)
+            : 0.0;
+
+        std::cout << "listener summary datagrams=" << counters.datagrams
+                  << " decoded=" << counters.decoded
+                  << " delivered=" << counters.delivered
+                  << " buffered=" << counters.buffered
+                  << " rejected=" << counters.rejected
+                  << " truncated=" << counters.truncated
+                  << " malformed=" << counters.malformed
+                  << " elapsed_us=" << elapsed_microseconds
+                  << " messages_per_second=" << messages_per_second << '\n';
         std::cout << "listener stopped" << std::endl;
 
         return received_invalid_packet ? 1 : 0;
     } catch (const std::exception& error) {
         std::cerr << "receiver error: " << error.what() << '\n';
+        std::cerr << "usage: obz_market_data_listener [group] [port] [interface] "
+                     "[--stop-after packets] [--quiet]\n";
         return 1;
     }
 }

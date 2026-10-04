@@ -137,6 +137,7 @@ macOS tasks include:
 - `Obz Market Lab macOS: Benchmark Market Data`
 - `Obz Market Lab macOS: Tracy Run Runner Benchmark`
 - `Obz Market Lab macOS: Tracy Run Market Data Listener`
+- `Obz Market Lab macOS: Tracy Publish Market Data Load`
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 
@@ -231,11 +232,47 @@ The receiver accepts an optional group, port and interface address:
 obz_market_data_listener [group] [port] [interface]
 ```
 
-The publisher accepts an optional group and port:
+The publisher accepts an optional group and port followed by load options:
 
 ```text
 obz_market_exchange_feed_simulator [group] [port]
+    [--messages count]
+    [--burst-size count]
+    [--interval-us microseconds]
+    [--quiet]
 ```
+
+Without `--messages`, the publisher retains the three-update walkthrough. Load
+mode submits a deterministic series of resting buy orders and publishes their
+consecutive top-of-book updates. Messages are sent back-to-back within each
+burst; `--interval-us` optionally pauses between bursts. No random input is used
+in this baseline.
+
+The listener accepts two measurement options after its existing address
+arguments:
+
+```text
+obz_market_data_listener [group] [port] [interface]
+    [--stop-after packets]
+    [--quiet]
+```
+
+`--quiet` suppresses per-packet output while preserving errors and the final
+counter summary. `--stop-after` exits once that many packets have been delivered
+in sequence. For example, run the listener and publisher in separate terminals:
+
+```bash
+./build-tracy-release/apps/market_data_listener/obz_market_data_listener \
+  --stop-after 100000 --quiet
+
+./build/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator \
+  --messages 100000 --burst-size 64 --interval-us 0 --quiet
+```
+
+Both applications report elapsed time and message throughput. The publisher's
+time includes deterministic matching-event generation as well as encoding and
+transmission. The listener measures from its first received datagram to its
+last, so it excludes the initial wait for the publisher.
 
 Interface `0.0.0.0` asks the operating system to choose the receiving interface.
 The receiver runs until `SIGINT` or `SIGTERM` requests a clean shutdown.
@@ -257,8 +294,9 @@ Sequence gaps are detected, and packets received ahead of a gap can be retained
 within configured bounds. Retransmission and snapshot recovery are not yet
 implemented, so an unresolved gap requires external resynchronisation.
 
-The exchange feed simulator currently emits a fixed command sequence. Planned
-work includes scenario-driven or generated input and registering the existing
+The exchange feed simulator supports the original fixed walkthrough and a
+deterministic ordered load mode. Planned work includes controlled reordering,
+duplication and loss, richer generated input, and registering the existing
 cross-process multicast smoke flow as an optional integration test.
 
 Market Lab is validated with Clang on macOS, GCC and Clang in the Linux

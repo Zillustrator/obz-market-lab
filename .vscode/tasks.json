@@ -262,6 +262,7 @@
         "--target",
         "obz_market_lab_matching_runtime_benchmarks",
         "obz_market_data_listener",
+        "obz_market_exchange_feed_simulator",
         "--parallel"
       ],
       "options": {
@@ -292,6 +293,31 @@
         "cwd": "${workspaceFolder}"
       },
       "dependsOn": "Obz Market Lab macOS: Build Tracy Release",
+      "presentation": {
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Obz Market Lab macOS: Tracy Publish Market Data Load",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-tracy-release/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator",
+      "args": [
+        "--messages",
+        "100000",
+        "--burst-size",
+        "64",
+        "--interval-us",
+        "0",
+        "--quiet"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Obz Market Lab macOS: Build Tracy Release",
+      "presentation": {
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
