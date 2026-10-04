@@ -1,5 +1,5 @@
 #include <obz/market_lab/market_data/multicast_receiver.hpp>
-#include <obz/market_lab/market_data/sequenced_buffer.hpp>
+#include <obz/market_lab/market_data/processor.hpp>
 
 #include <charconv>
 #include <cstddef>
@@ -57,7 +57,7 @@ void print_packet(const packet& decoded) {
     std::cout << " aggregate_size=" << update.aggregate_size << '\n';
 }
 
-void print_buffer_error(sequence_result result, std::uint64_t sequence) {
+void print_processing_error(sequence_result result, std::uint64_t sequence) {
     switch (result) {
     case sequence_result::old:
         std::cerr << "discarded old packet sequence=" << sequence << '\n';
@@ -104,10 +104,12 @@ int main(int argc, char** argv) {
                   << " count=" << packet_count << std::endl;
 
         bool received_invalid_packet{};
-        sequenced_buffer<packet> packets{
-            sequenced_buffer_limits{
-                .maximum_pending_values = maximum_pending_packets,
-                .maximum_sequence_gap = maximum_sequence_gap
+        processor packet_processor{
+            processor_config{
+                .sequence_limits = sequenced_buffer_limits{
+                    .maximum_pending_values = maximum_pending_packets,
+                    .maximum_sequence_gap = maximum_sequence_gap
+                }
             }
         };
 
@@ -132,30 +134,25 @@ int main(int argc, char** argv) {
 
             auto& received = std::get<received_packet>(result);
             const auto sequence = received.value.sequence;
-            const auto ordering = packets.push(sequence, [&] {
-                return std::move(received.value);
-            });
+            const auto processed = packet_processor.process(
+                std::move(received.value),
+                [](const packet& value) {
+                    print_packet(value);
+                });
 
-            if (ordering == sequence_result::ready) {
-                print_packet(received.value);
-                while (auto queued = packets.pop_ready()) {
-                    print_packet(*queued);
-                }
-                continue;
-            }
-
-            if (ordering != sequence_result::buffered) {
-                print_buffer_error(ordering, sequence);
+            if (processed.ordering != sequence_result::ready &&
+                processed.ordering != sequence_result::buffered) {
+                print_processing_error(processed.ordering, sequence);
                 received_invalid_packet = true;
             }
         }
 
-        if (packets.pending_size() != 0) {
+        if (packet_processor.pending_size() != 0) {
             std::cerr << "unresolved sequence gap";
-            if (const auto next = packets.next_sequence()) {
+            if (const auto next = packet_processor.next_sequence()) {
                 std::cerr << ": expected=" << *next;
             }
-            std::cerr << " pending=" << packets.pending_size() << '\n';
+            std::cerr << " pending=" << packet_processor.pending_size() << '\n';
             received_invalid_packet = true;
         }
 

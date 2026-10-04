@@ -153,7 +153,7 @@ struct runner::implementation {
 
     void process(queued_submit& queued) {
         try {
-            queued.response.set_value(engine.submit(queued.request));
+            queued.response.set_value(matching_engine.submit(queued.request));
         } catch (...) {
             queued.response.set_exception(std::current_exception());
         }
@@ -161,7 +161,7 @@ struct runner::implementation {
 
     void process(queued_update& queued) {
         try {
-            queued.response.set_value(engine.update(queued.request));
+            queued.response.set_value(matching_engine.update(queued.request));
         } catch (...) {
             queued.response.set_exception(std::current_exception());
         }
@@ -169,7 +169,7 @@ struct runner::implementation {
 
     void process(queued_cancel& queued) {
         try {
-            queued.response.set_value(engine.cancel(queued.request));
+            queued.response.set_value(matching_engine.cancel(queued.request));
         } catch (...) {
             queued.response.set_exception(std::current_exception());
         }
@@ -178,14 +178,14 @@ struct runner::implementation {
     void process(queued_snapshot& queued) {
         try {
             queued.response.set_value(
-                engine.snapshot(queued.request.instrument, queued.request.depth)
+                matching_engine.snapshot(queued.request.instrument, queued.request.depth)
             );
         } catch (...) {
             queued.response.set_exception(std::current_exception());
         }
     }
 
-    engine engine;
+    engine matching_engine;
     obz::bounded_blocking_queue<queued_command> commands;
     std::thread worker;
     std::atomic<bool> accepting{false};

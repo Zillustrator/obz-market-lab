@@ -11,6 +11,11 @@ next expected sequence and releases them in order when the gap closes. Its
 deferred factory is invoked only when a value must be stored, leaving the
 normal in-order value in caller-owned storage.
 
+The synchronous `processor` owns that sequencing state. It accepts fully
+decoded packets and invokes a caller-supplied consumer only for packets ready
+for ordered delivery. Multicast reception, application logging and recovery
+decisions remain outside the processor.
+
 It depends on `matching`, `market_data_protocol` and ObzLib transport. Its
 public API is in `obz::market_lab::market_data`. This component is the adapter
 between the matching domain and the independent wire protocol.
