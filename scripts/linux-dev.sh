@@ -71,7 +71,7 @@ cmake --build /build/market-gcc \
   --parallel 4
 
 receiver_log="$(mktemp)"
-timeout 10 /build/market-gcc/apps/market_data_listener/obz_market_data_listener \
+/build/market-gcc/apps/market_data_listener/obz_market_data_listener \
   >"${receiver_log}" 2>&1 &
 receiver_pid=$!
 
@@ -96,9 +96,25 @@ fi
 
 /build/market-gcc/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator
 
+for _ in $(seq 1 50); do
+  received_count="$(grep -c "^received sequence=" "${receiver_log}" || true)"
+  if [[ "${received_count}" -ge 3 ]]; then
+    break
+  fi
+  sleep 0.1
+done
+
+received_count="$(grep -c "^received sequence=" "${receiver_log}" || true)"
+if [[ "${received_count}" -lt 3 ]]; then
+  cat "${receiver_log}"
+  echo "receiver did not process all published packets" >&2
+  exit 1
+fi
+
+kill -TERM "${receiver_pid}"
 if ! wait "${receiver_pid}"; then
   cat "${receiver_log}"
-  echo "receiver failed or timed out" >&2
+  echo "receiver did not stop cleanly" >&2
   exit 1
 fi
 

@@ -219,10 +219,10 @@ In a second terminal:
 ./build/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator
 ```
 
-The receiver accepts optional group, port, interface address and packet count:
+The receiver accepts an optional group, port and interface address:
 
 ```text
-obz_market_data_listener [group] [port] [interface] [count]
+obz_market_data_listener [group] [port] [interface]
 ```
 
 The publisher accepts an optional group and port:
@@ -232,9 +232,11 @@ obz_market_exchange_feed_simulator [group] [port]
 ```
 
 Interface `0.0.0.0` asks the operating system to choose the receiving interface.
+The receiver runs until `SIGINT` or `SIGTERM` requests a clean shutdown.
 The Linux VS Code task `Obz Market Lab Linux: Run Multicast Demo` builds both
 applications, starts them as separate processes in one container, waits for
-receiver readiness and fails after ten seconds rather than blocking forever.
+receiver readiness, publishes three updates and stops the receiver with
+`SIGTERM` after all three have been observed.
 
 ## Benchmarking
 
