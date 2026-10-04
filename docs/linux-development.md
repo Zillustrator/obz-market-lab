@@ -8,7 +8,7 @@ runs its containers against the Linux kernel in its VM.
 From the repository root:
 
 ```sh
-docker build -t obz-linux-dev:ubuntu24.04 docker/linux-dev
+docker build -t obz-market-lab-linux-dev:ubuntu24.04 docker/linux-dev
 ```
 
 The final argument is the build context: the directory Docker can use during
@@ -39,7 +39,7 @@ Record image IDs and compiler versions when comparing results.
 ## Explore Linux
 
 ```sh
-docker run --rm -it obz-linux-dev:ubuntu24.04
+docker run --rm -it obz-market-lab-linux-dev:ubuntu24.04
 ```
 
 `-it` provides an interactive terminal. `--rm` removes the container when its

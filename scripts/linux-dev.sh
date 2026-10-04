@@ -6,7 +6,7 @@ readonly script_directory="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly market_lab_source="$(cd "${script_directory}/.." && pwd)"
 readonly default_obz_source="$(cd "${market_lab_source}/../.." && pwd)/ObzLib/repo"
 readonly obz_source="${OBZ_SOURCE_DIR:-${default_obz_source}}"
-readonly image="obz-linux-dev:ubuntu24.04"
+readonly image="obz-market-lab-linux-dev:ubuntu24.04"
 readonly build_volume="obz-linux-build"
 
 print_usage() {
