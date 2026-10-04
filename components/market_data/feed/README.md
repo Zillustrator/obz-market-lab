@@ -16,6 +16,13 @@ decoded packets and invokes a caller-supplied consumer only for packets ready
 for ordered delivery. Multicast reception, application logging and recovery
 decisions remain outside the processor.
 
+`top_of_book_view` remains unavailable until a separately obtained snapshot
+establishes both sides for a symbol. It applies later ordered multicast updates
+and hides retained state after an application invalidates it. The snapshot is
+deliberately absent from the multicast packet variant, keeping recovery traffic
+out of the incremental hot path. Its future request/response transport and the
+coordinator that rebases buffered incrementals are not implemented yet.
+
 It depends on `matching`, `market_data_protocol` and ObzLib transport. Its
 public API is in `obz::market_lab::market_data`. This component is the adapter
 between the matching domain and the independent wire protocol.
