@@ -70,6 +70,17 @@
       "preLaunchTask": "Obz Market Lab macOS: Build Bench Release"
     },
     {
+      "name": "Obz Market Lab macOS: Run Benchmarks Market Data",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build-bench-release/components/market_data/feed/benchmarks/obz_market_lab_market_data_feed_benchmarks",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Obz Market Lab macOS: Build Bench Release"
+    },
+    {
       "name": "Obz Market Lab macOS: Run Tracy Benchmark Runner",
       "type": "cppdbg",
       "request": "launch",

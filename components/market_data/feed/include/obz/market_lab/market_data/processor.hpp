@@ -2,6 +2,7 @@
 
 #include <obz/market_lab/market_data/codec.hpp>
 #include <obz/market_lab/market_data/sequenced_buffer.hpp>
+#include <obz/market_lab/tracing/trace.hpp>
 
 #include <cstddef>
 #include <cstdint>
@@ -28,20 +29,28 @@ public:
 
     template <typename Consumer>
     processing_result process(packet value, Consumer&& consume) {
-        const auto ordering = packets_.push(value.sequence, [&] {
-            return std::move(value);
-        });
+        OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.process");
+
+        const auto ordering = [&] {
+            OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.sequence");
+            return packets_.push(value.sequence, [&] {
+                return std::move(value);
+            });
+        }();
 
         processing_result result{ordering};
         if (ordering != sequence_result::ready) {
             return result;
         }
 
-        std::invoke(consume, std::move(value));
+        invoke_consumer(consume, std::move(value));
         ++result.packets_delivered;
 
-        while (auto queued = packets_.pop_ready()) {
-            std::invoke(consume, std::move(*queued));
+        while (auto queued = [&] {
+            OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.sequence");
+            return packets_.pop_ready();
+        }()) {
+            invoke_consumer(consume, std::move(*queued));
             ++result.packets_delivered;
         }
 
@@ -57,6 +66,12 @@ public:
     }
 
 private:
+    template <typename Consumer>
+    static void invoke_consumer(Consumer& consume, packet&& value) {
+        OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.consume");
+        std::invoke(consume, std::move(value));
+    }
+
     sequenced_buffer<packet> packets_;
 };
 

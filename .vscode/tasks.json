@@ -199,6 +199,7 @@
         "build-bench-release",
         "--target",
         "obz_market_lab_matching_runtime_benchmarks",
+        "obz_market_lab_market_data_feed_benchmarks",
         "--parallel"
       ],
       "options": {
@@ -221,6 +222,16 @@
       "problemMatcher": []
     },
     {
+      "label": "Obz Market Lab macOS: Benchmark Market Data",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-bench-release/components/market_data/feed/benchmarks/obz_market_lab_market_data_feed_benchmarks",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Obz Market Lab macOS: Build Bench Release",
+      "problemMatcher": []
+    },
+    {
       "label": "Obz Market Lab macOS: Configure Tracy Release",
       "type": "shell",
       "command": "cmake",
@@ -233,6 +244,7 @@
         "-DCMAKE_BUILD_TYPE=Release",
         "-DOBZ_MARKET_LAB_BUILD_TESTS=OFF",
         "-DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON",
+        "-DOBZ_MARKET_LAB_BUILD_APPS=ON",
         "-DOBZ_MARKET_LAB_ENABLE_TRACY=ON"
       ],
       "options": {
@@ -249,6 +261,7 @@
         "build-tracy-release",
         "--target",
         "obz_market_lab_matching_runtime_benchmarks",
+        "obz_market_data_listener",
         "--parallel"
       ],
       "options": {
@@ -265,6 +278,16 @@
         "--benchmark_filter=runner_submit_round_trip",
         "--benchmark_min_time=120s"
       ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Obz Market Lab macOS: Build Tracy Release",
+      "problemMatcher": []
+    },
+    {
+      "label": "Obz Market Lab macOS: Tracy Run Market Data Listener",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-tracy-release/apps/market_data_listener/obz_market_data_listener",
       "options": {
         "cwd": "${workspaceFolder}"
       },

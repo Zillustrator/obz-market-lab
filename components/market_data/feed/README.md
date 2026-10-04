@@ -19,3 +19,10 @@ decisions remain outside the processor.
 It depends on `matching`, `market_data_protocol` and ObzLib transport. Its
 public API is in `obz::market_lab::market_data`. This component is the adapter
 between the matching domain and the independent wire protocol.
+
+The feed benchmarks deliberately exclude socket I/O. They measure decoding in
+isolation and the synchronous decode, sequence and consume path under a long
+in-order stream and fixed-size bursts. This provides a repeatable in-memory
+baseline before considering another thread or queue. Tracy instrumentation in
+the running receiver separately identifies time spent in blocking receive,
+decode, sequencing and consumer work.

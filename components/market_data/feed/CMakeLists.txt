@@ -21,8 +21,13 @@ target_link_libraries(obz_market_lab_market_data_feed
         obz_market_lab::matching
         obz_market_lab::market_data_protocol
         obz::transport
+        obz_market_lab::tracing
 )
 
 if (OBZ_MARKET_LAB_BUILD_TESTS)
     add_subdirectory(tests)
+endif()
+
+if (OBZ_MARKET_LAB_BUILD_BENCHMARKS)
+    add_subdirectory(benchmarks)
 endif()

@@ -1,7 +1,7 @@
 # Benchmarking
 
-Obz Market Lab uses Google Benchmark for focused matching and matching-runtime
-benchmarks.
+Obz Market Lab uses Google Benchmark for focused matching, matching-runtime and
+market-data feed benchmarks.
 
 Benchmarks are disabled by default so normal development builds stay fast and do
 not fetch benchmark dependencies unless requested.
@@ -19,6 +19,7 @@ Use a dedicated Release build directory for benchmark runs:
 /opt/homebrew/bin/cmake --build build-bench-release \
   --target obz_market_lab_matching_benchmarks \
            obz_market_lab_matching_runtime_benchmarks \
+           obz_market_lab_market_data_feed_benchmarks \
   --parallel
 ```
 
@@ -27,6 +28,7 @@ Run the benchmark executable directly:
 ```bash
 ./build-bench-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks
 ./build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
+./build-bench-release/components/market_data/feed/benchmarks/obz_market_lab_market_data_feed_benchmarks
 ```
 
 Useful Google Benchmark options:
@@ -51,6 +53,9 @@ The benchmark suite covers:
 - snapshots at depths 1, 10, 50, and 100
 - engine-runner submit, update, cancel, and snapshot round trips through the command
   queue
+- market-data book-update decoding
+- sustained synchronous decode, sequence, and consume processing
+- synchronous bursts of 16, 64, and 256 market-data packets
 
 These are baseline measurements rather than final performance claims. Debug
 build timings should only be used as smoke tests because compiler optimization
@@ -109,3 +114,28 @@ portable hardware claims.
 | `runner_update_round_trip` | 5.3 us | 3.1 us |
 | `runner_submit_round_trip` | 4.5 us | 2.2 us |
 | `runner_snapshot_round_trip` | 4.4 us | 2.3 us |
+
+### Market-data synchronous baseline
+
+These additional results were collected on the same class of local machine on
+2026-10-04 using a Release build and Google Benchmark `v1.9.1`:
+
+```bash
+./build-bench-release/components/market_data/feed/benchmarks/obz_market_lab_market_data_feed_benchmarks \
+  --benchmark_min_time=0.1s
+```
+
+The benchmark excludes socket I/O and console output. Processor construction
+and the preparation of encoded input are outside the timed sections.
+
+| Benchmark | CPU Time | Throughput |
+| --- | ---: | ---: |
+| `decode_book_update` | 12.4 ns/packet | 80.9 M packets/s |
+| `synchronous_in_order` | 16.5 ns/packet | 60.5 M packets/s |
+| `synchronous_burst/16` | 661 ns/burst | 24.2 M packets/s |
+| `synchronous_burst/64` | 1.34 us/burst | 47.8 M packets/s |
+| `synchronous_burst/256` | 4.10 us/burst | 62.4 M packets/s |
+
+These numbers establish a local comparison baseline. They do not describe
+network throughput because receiving, kernel scheduling, logging and downstream
+application work are absent.
