@@ -1,0 +1,43 @@
+name: Windows
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    name: MSVC 2022 x64
+    runs-on: windows-2022
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out Market Lab
+        uses: actions/checkout@v4
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build-windows
+          -G "Visual Studio 17 2022"
+          -A x64
+          -DOBZ_MARKET_LAB_BUILD_TESTS=ON
+          -DOBZ_MARKET_LAB_BUILD_APPS=ON
+          -DOBZ_MARKET_LAB_BUILD_BENCHMARKS=OFF
+          -DOBZ_MARKET_LAB_ENABLE_TRACY=OFF
+
+      - name: Build
+        run: cmake --build build-windows --config Debug --parallel 4
+
+      - name: Test
+        run: >-
+          ctest --test-dir build-windows
+          --build-config Debug
+          --output-on-failure
+          --timeout 60
