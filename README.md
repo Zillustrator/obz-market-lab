@@ -18,6 +18,8 @@ benchmarks, and profiling.
 - Multiple symbols.
 - Deterministic event output.
 - Versioned binary encoding and validation for top-of-book market-data updates.
+- UDP multicast publication and reception.
+- Bounded sequencing and ordered delivery of decoded market-data packets.
 - Focused tests for matching behaviour.
 - Queue-backed matching runner that serialises commands onto an engine thread.
 - Console replay demo that exercises the matching runtime.
@@ -60,7 +62,8 @@ The multicast demo runs a publisher and receiver as separate processes. The
 publisher submits commands through the queue-backed matching runner, selects the
 resulting top-of-book events, assigns feed sequence numbers and sends one
 encoded packet per UDP datagram. The receiver joins the configured group,
-validates and decodes each datagram, then prints the update.
+validates and decodes each datagram, buffers packets received ahead of a bounded
+sequence gap, and delivers contiguous updates in order.
 
 Production code is organised as self-contained components. Each component owns
 its public headers, implementation, unit tests and focused benchmarks:
@@ -237,6 +240,25 @@ The Linux VS Code task `Obz Market Lab Linux: Run Multicast Demo` builds both
 applications, starts them as separate processes in one container, waits for
 receiver readiness, publishes three updates and stops the receiver with
 `SIGTERM` after all three have been observed.
+
+## Current Limitations and Next Steps
+
+The multicast listener currently receives, decodes and processes packets on one
+thread. The next stage will benchmark and profile that path, then evaluate
+whether socket reception should be separated from ordered processing with a
+bounded queue and explicit overload policy.
+
+Sequence gaps are detected, and packets received ahead of a gap can be retained
+within configured bounds. Retransmission and snapshot recovery are not yet
+implemented, so an unresolved gap requires external resynchronisation.
+
+The exchange feed simulator currently emits a fixed command sequence. Planned
+work includes scenario-driven or generated input and registering the existing
+cross-process multicast smoke flow as an optional integration test.
+
+Market Lab is validated with Clang on macOS and with GCC and Clang in the Linux
+development container. Automated Windows CI for this repository is planned as
+a separate focused stage.
 
 ## Benchmarking
 
