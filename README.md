@@ -134,7 +134,9 @@ macOS tasks include:
 - `Obz Market Lab macOS: Run Replay Demo JSONL`
 - `Obz Market Lab macOS: Run Replay Scenarios`
 - `Obz Market Lab macOS: Benchmark Runner`
+- `Obz Market Lab macOS: Benchmark Market Data`
 - `Obz Market Lab macOS: Tracy Run Runner Benchmark`
+- `Obz Market Lab macOS: Tracy Run Market Data Listener`
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 
@@ -144,6 +146,7 @@ Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 - `Obz Market Lab macOS: Debug Replay Tests`
 - `Obz Market Lab macOS: Debug Replay Demo`
 - `Obz Market Lab macOS: Run Benchmarks Runner`
+- `Obz Market Lab macOS: Run Benchmarks Market Data`
 - `Obz Market Lab macOS: Run Tracy Benchmark Runner`
 
 The default VS Code build uses the tagged ObzLib dependency. It does not require
@@ -244,9 +247,11 @@ receiver readiness, publishes three updates and stops the receiver with
 ## Current Limitations and Next Steps
 
 The multicast listener currently receives, decodes and processes packets on one
-thread. The next stage will benchmark and profile that path, then evaluate
-whether socket reception should be separated from ordered processing with a
-bounded queue and explicit overload policy.
+thread. Repeatable in-memory benchmarks now establish a synchronous decode,
+sequence and consume baseline, and Tracy zones expose the corresponding runtime
+stages. The next step is to inspect the socket-driven path under representative
+load before deciding whether reception should be separated from ordered
+processing with a bounded queue and explicit overload policy.
 
 Sequence gaps are detected, and packets received ahead of a gap can be retained
 within configured bounds. Retransmission and snapshot recovery are not yet
@@ -273,11 +278,19 @@ cmake -S . -B build-bench-release \
 cmake --build build-bench-release \
   --target obz_market_lab_matching_benchmarks \
            obz_market_lab_matching_runtime_benchmarks \
+           obz_market_lab_market_data_feed_benchmarks \
   --parallel
 
 ./build-bench-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks
 ./build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
+./build-bench-release/components/market_data/feed/benchmarks/obz_market_lab_market_data_feed_benchmarks
 ```
+
+The market-data feed benchmark separates codec-only decoding from the complete
+synchronous decode, sequence and consume path. It includes a sustained in-order
+stream and bursts of 16, 64 and 256 packets. Socket I/O is intentionally absent
+from these microbenchmarks; profile the running multicast listener with Tracy
+to observe the blocking receive and application stages together.
 
 See `docs/benchmarking.md` for benchmark details and useful command-line
 options.
@@ -298,10 +311,12 @@ cmake -S . -B build-tracy-release \
   -DCMAKE_BUILD_TYPE=Release \
   -DOBZ_MARKET_LAB_BUILD_TESTS=OFF \
   -DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON \
+  -DOBZ_MARKET_LAB_BUILD_APPS=ON \
   -DOBZ_MARKET_LAB_ENABLE_TRACY=ON
 
 cmake --build build-tracy-release \
   --target obz_market_lab_matching_benchmarks \
+           obz_market_data_listener \
   --parallel
 ```
 

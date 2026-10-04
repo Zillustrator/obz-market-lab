@@ -1,5 +1,7 @@
 #include <obz/market_lab/market_data/multicast_receiver.hpp>
 
+#include <obz/market_lab/tracing/trace.hpp>
+
 #include <obz/transport/udp_socket.hpp>
 
 #include <span>
@@ -14,7 +16,10 @@ multicast_receiver::multicast_receiver(multicast_subscription subscription) {
 }
 
 multicast_receive_result multicast_receiver::receive() {
-    const auto received = socket_.receive_from(receive_buffer_);
+    const auto received = [&] {
+        OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.receive");
+        return socket_.receive_from(receive_buffer_);
+    }();
     datagram_sender sender{received.sender.host, received.sender.port};
 
     if (received.status == obz::transport::datagram_status::truncated) {
@@ -23,7 +28,10 @@ multicast_receive_result multicast_receiver::receive() {
 
     const auto bytes = std::span<const std::byte>{receive_buffer_}.first(
         received.bytes_received);
-    auto decoded = decode(bytes);
+    auto decoded = [&] {
+        OBZ_MARKET_LAB_TRACE_SCOPE_N("market_data.decode");
+        return decode(bytes);
+    }();
 
     if (auto* error = std::get_if<decode_error>(&decoded)) {
         return malformed_packet{*error, std::move(sender)};
