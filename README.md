@@ -17,9 +17,12 @@ benchmarks, and profiling.
 - Price-time priority.
 - Multiple symbols.
 - Deterministic event output.
+- Versioned binary encoding and validation for top-of-book market-data updates.
+- UDP multicast publication and reception.
+- Bounded sequencing and ordered delivery of decoded market-data packets.
 - Focused tests for matching behaviour.
-- Queue-backed engine runner that serialises commands onto an engine thread.
-- Console replay demo that exercises the queued pipeline.
+- Queue-backed matching runner that serialises commands onto an engine thread.
+- Console replay demo that exercises the matching runtime.
 
 ## Architecture
 
@@ -30,7 +33,7 @@ scenario files / built-in demo
 market_replay app
         |
         v
-engine_runner  -- ObzLib bounded_blocking_queue -->  matching_engine
+runner  -- ObzLib bounded_blocking_queue -->  engine
                                                     |
                                                     v
                                              per-symbol order_book
@@ -39,14 +42,45 @@ engine_runner  -- ObzLib bounded_blocking_queue -->  matching_engine
                                       events and book snapshots
 ```
 
-The core `matching_engine` is deliberately single-threaded. It owns the active
+The core `engine` is deliberately single-threaded. It owns the active
 order index and routes commands to one `order_book` per symbol. Each
 `order_book` owns its bid and ask price levels, preserving price-time priority
 with ordered price maps and FIFO queues at each level.
 
-The `engine_runner` is the concurrency boundary. It serialises submit, update,
+The `runner` is the concurrency boundary. It serialises submit, update,
 cancel, and snapshot commands through an ObzLib bounded blocking queue and
 executes them on a dedicated engine thread.
+
+The market-data protocol owns wire-facing messages and converts them to and
+from an explicit network byte layout. It does not depend on the matching
+component. The feed component translates matching events into protocol
+messages and handles socket transport, leaving malformed-packet behavior easy
+to test deterministically. See `docs/market-data-protocol.md` for the current
+wire contract.
+
+The multicast demo runs a publisher and receiver as separate processes. The
+publisher submits commands through the queue-backed matching runner, selects the
+resulting top-of-book events, assigns feed sequence numbers and sends one
+encoded packet per UDP datagram. The receiver joins the configured group,
+validates and decodes each datagram, buffers packets received ahead of a bounded
+sequence gap, and delivers contiguous updates in order.
+
+Production code is organised as self-contained components. Each component owns
+its public headers, implementation, unit tests and focused benchmarks:
+
+```text
+components/
+  matching/
+    engine/    Single-threaded order-book and matching logic
+    runtime/   Queue-backed threaded execution
+  market_data/
+    protocol/  Versioned packet encoding and decoding
+    feed/      Multicast publishing and receiving
+  tracing/     Shared optional instrumentation
+```
+
+Public C++ APIs use the `obz::market_lab` namespace and include paths beginning
+with `obz/market_lab`.
 
 ## Matching Rules
 
@@ -74,32 +108,43 @@ cmake --build build --parallel
 ctest --test-dir build --output-on-failure
 ```
 
-To consume the published ObzLib `v0.1.0` tag instead, omit
-`OBZ_MARKET_LAB_OBZ_SOURCE_DIR`.
+To consume the pinned ObzLib revision instead, omit
+`OBZ_MARKET_LAB_OBZ_SOURCE_DIR`. The pinned revision includes the multicast
+membership API used by the market-data receiver.
 
 ## VS Code
 
 Shared VS Code tasks and launch configurations are included in `.vscode/`.
 
-Use `Cmd + Shift + P` -> `Tasks: Run Task`, then search for `OML` to run
-project tasks:
+Use `Cmd + Shift + P` -> `Tasks: Run Task`, then search for `Obz Market Lab`
+to run project tasks. Linux tasks include:
 
-- `OML: Build Debug`
-- `OML: Test All`
-- `OML: Test Pipeline`
-- `OML: Run Replay Demo`
-- `OML: Run Replay Demo JSONL`
-- `OML: Run Replay Scenarios`
-- `OML: Benchmark Runner`
-- `OML: Tracy Run Runner Benchmark`
+- `Obz Market Lab Linux: Build Development Image`
+- `Obz Market Lab Linux: Open Shell`
+- `Obz Market Lab Linux: Test GCC`
+- `Obz Market Lab Linux: Test Clang`
+- `Obz Market Lab Linux: Run Multicast Demo`
+
+macOS tasks include:
+
+- `Obz Market Lab macOS: Build Debug`
+- `Obz Market Lab macOS: Test All`
+- `Obz Market Lab macOS: Test Matching Runtime`
+- `Obz Market Lab macOS: Run Replay Demo`
+- `Obz Market Lab macOS: Run Replay Demo JSONL`
+- `Obz Market Lab macOS: Run Replay Scenarios`
+- `Obz Market Lab macOS: Benchmark Runner`
+- `Obz Market Lab macOS: Tracy Run Runner Benchmark`
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:
 
-- `OML: Debug Tests All`
-- `OML: Debug Tests Pipeline`
-- `OML: Debug Replay Demo`
-- `OML: Run Benchmarks Runner`
-- `OML: Run Tracy Benchmark Runner`
+- `Obz Market Lab macOS: Debug Matching Tests`
+- `Obz Market Lab macOS: Debug Matching Runtime Tests`
+- `Obz Market Lab macOS: Debug Market Data Protocol Tests`
+- `Obz Market Lab macOS: Debug Replay Tests`
+- `Obz Market Lab macOS: Debug Replay Demo`
+- `Obz Market Lab macOS: Run Benchmarks Runner`
+- `Obz Market Lab macOS: Run Tracy Benchmark Runner`
 
 The default VS Code build uses the tagged ObzLib dependency. It does not require
 a local ObzLib checkout.
@@ -107,7 +152,7 @@ a local ObzLib checkout.
 ## Replay Demo
 
 The replay demo is a small console application that drives the queue-backed
-`engine_runner`, prints emitted events, and requests snapshots after key steps.
+`runner`, prints emitted events, and requests snapshots after key steps.
 It can run a built-in walkthrough, or it can replay a text scenario file.
 
 ```bash
@@ -157,9 +202,63 @@ The scenario parser is intentionally file-oriented: comments, blank lines, and
 line-numbered parse errors are for editable replay files rather than live socket
 protocol input.
 
-In VS Code, run `OML: Run Replay Demo`, `OML: Run Replay Demo JSONL`, or
-`OML: Run Replay Scenarios` from `Tasks: Run Task`. Use
-`OML: Debug Replay Demo` from the Run and Debug panel.
+In VS Code, run `Obz Market Lab macOS: Run Replay Demo`,
+`Obz Market Lab macOS: Run Replay Demo JSONL`, or
+`Obz Market Lab macOS: Run Replay Scenarios` from `Tasks: Run Task`. Use
+`Obz Market Lab macOS: Debug Replay Demo` from the Run and Debug panel.
+
+## Multicast Demo
+
+Start the receiver before the publisher. Both applications default to multicast
+group `239.255.0.1` and UDP port `30001`:
+
+```bash
+./build/apps/market_data_listener/obz_market_data_listener
+```
+
+In a second terminal:
+
+```bash
+./build/apps/exchange_feed_simulator/obz_market_exchange_feed_simulator
+```
+
+The receiver accepts an optional group, port and interface address:
+
+```text
+obz_market_data_listener [group] [port] [interface]
+```
+
+The publisher accepts an optional group and port:
+
+```text
+obz_market_exchange_feed_simulator [group] [port]
+```
+
+Interface `0.0.0.0` asks the operating system to choose the receiving interface.
+The receiver runs until `SIGINT` or `SIGTERM` requests a clean shutdown.
+The Linux VS Code task `Obz Market Lab Linux: Run Multicast Demo` builds both
+applications, starts them as separate processes in one container, waits for
+receiver readiness, publishes three updates and stops the receiver with
+`SIGTERM` after all three have been observed.
+
+## Current Limitations and Next Steps
+
+The multicast listener currently receives, decodes and processes packets on one
+thread. The next stage will benchmark and profile that path, then evaluate
+whether socket reception should be separated from ordered processing with a
+bounded queue and explicit overload policy.
+
+Sequence gaps are detected, and packets received ahead of a gap can be retained
+within configured bounds. Retransmission and snapshot recovery are not yet
+implemented, so an unresolved gap requires external resynchronisation.
+
+The exchange feed simulator currently emits a fixed command sequence. Planned
+work includes scenario-driven or generated input and registering the existing
+cross-process multicast smoke flow as an optional integration test.
+
+Market Lab is validated with Clang on macOS and with GCC and Clang in the Linux
+development container. Automated Windows CI for this repository is planned as
+a separate focused stage.
 
 ## Benchmarking
 
@@ -173,19 +272,21 @@ cmake -S . -B build-bench-release \
   -DOBZ_MARKET_LAB_BUILD_BENCHMARKS=ON
 
 cmake --build build-bench-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
+           obz_market_lab_matching_runtime_benchmarks \
   --parallel
 
-./build-bench-release/benchmarks/obz_market_engine_benchmarks
+./build-bench-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks
+./build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks
 ```
 
 See `docs/benchmarking.md` for benchmark details and useful command-line
 options.
 
-## Pipeline
+## Matching Runtime
 
-The matching engine remains a single-threaded domain object. The pipeline layer
-adds an `engine_runner` that owns the engine on a worker thread and accepts
+The matching engine remains a single-threaded domain object. The matching
+runtime adds a `runner` that owns the engine on a worker thread and accepts
 submit, cancel, and snapshot commands through an ObzLib bounded blocking queue.
 
 ## Profiling
@@ -201,7 +302,7 @@ cmake -S . -B build-tracy-release \
   -DOBZ_MARKET_LAB_ENABLE_TRACY=ON
 
 cmake --build build-tracy-release \
-  --target obz_market_engine_benchmarks \
+  --target obz_market_lab_matching_benchmarks \
   --parallel
 ```
 
@@ -214,7 +315,7 @@ Start the Tracy profiler:
 Then run a benchmark long enough to connect:
 
 ```bash
-./build-tracy-release/benchmarks/obz_market_engine_benchmarks \
+./build-tracy-release/components/matching/engine/benchmarks/obz_market_lab_matching_benchmarks \
   --benchmark_filter=crossing_limit_matches_price_levels/100 \
   --benchmark_min_time=120s
 ```

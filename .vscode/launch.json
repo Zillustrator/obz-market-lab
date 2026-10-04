@@ -2,31 +2,51 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "OML: Debug Tests All",
+      "name": "Obz Market Lab macOS: Debug Matching Tests",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
+      "program": "${workspaceFolder}/build/components/matching/engine/tests/obz_market_lab_matching_tests",
       "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML: Debug Tests Pipeline",
+      "name": "Obz Market Lab macOS: Debug Matching Runtime Tests",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/tests/obz_market_engine_tests",
-      "args": [
-        "[pipeline]"
-      ],
+      "program": "${workspaceFolder}/build/components/matching/runtime/tests/obz_market_lab_matching_runtime_tests",
+      "args": [],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML: Debug Replay Demo",
+      "name": "Obz Market Lab macOS: Debug Market Data Protocol Tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/components/market_data/protocol/tests/obz_market_lab_market_data_protocol_tests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
+    },
+    {
+      "name": "Obz Market Lab macOS: Debug Replay Tests",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/apps/market_replay/tests/obz_market_lab_replay_tests",
+      "args": [],
+      "cwd": "${workspaceFolder}",
+      "stopAtEntry": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
+    },
+    {
+      "name": "Obz Market Lab macOS: Debug Replay Demo",
       "type": "cppdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/apps/market_replay/obz_market_replay",
@@ -34,26 +54,26 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML: Build Debug"
+      "preLaunchTask": "Obz Market Lab macOS: Build Debug"
     },
     {
-      "name": "OML: Run Benchmarks Runner",
+      "name": "Obz Market Lab macOS: Run Benchmarks Runner",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build-bench-release/benchmarks/obz_market_engine_benchmarks",
+      "program": "${workspaceFolder}/build-bench-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
       "args": [
         "--benchmark_filter=runner"
       ],
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML: Build Bench Release"
+      "preLaunchTask": "Obz Market Lab macOS: Build Bench Release"
     },
     {
-      "name": "OML: Run Tracy Benchmark Runner",
+      "name": "Obz Market Lab macOS: Run Tracy Benchmark Runner",
       "type": "cppdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build-tracy-release/benchmarks/obz_market_engine_benchmarks",
+      "program": "${workspaceFolder}/build-tracy-release/components/matching/runtime/benchmarks/obz_market_lab_matching_runtime_benchmarks",
       "args": [
         "--benchmark_filter=runner_submit_round_trip",
         "--benchmark_min_time=120s"
@@ -61,7 +81,7 @@
       "cwd": "${workspaceFolder}",
       "stopAtEntry": false,
       "MIMode": "lldb",
-      "preLaunchTask": "OML: Build Tracy Release"
+      "preLaunchTask": "Obz Market Lab macOS: Build Tracy Release"
     }
   ]
 }
