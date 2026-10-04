@@ -256,9 +256,8 @@ The exchange feed simulator currently emits a fixed command sequence. Planned
 work includes scenario-driven or generated input and registering the existing
 cross-process multicast smoke flow as an optional integration test.
 
-Market Lab is validated with Clang on macOS and with GCC and Clang in the Linux
-development container. Automated Windows CI for this repository is planned as
-a separate focused stage.
+Market Lab is validated with Clang on macOS, GCC and Clang in the Linux
+development container, and MSVC 2022 through its Windows CI workflow.
 
 ## Benchmarking
 
