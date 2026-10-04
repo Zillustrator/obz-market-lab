@@ -2,6 +2,7 @@ add_library(obz_market_lab_market_data_feed
     src/feed_encoder.cpp
     src/multicast_publisher.cpp
     src/multicast_receiver.cpp
+    src/top_of_book_view.cpp
 )
 
 add_library(obz_market_lab::market_data_feed ALIAS obz_market_lab_market_data_feed)
