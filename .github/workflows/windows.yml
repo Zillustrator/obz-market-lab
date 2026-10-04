@@ -3,7 +3,7 @@ name: Windows
 on:
   push:
     branches:
-      - windows-ci
+      - main
   pull_request:
     branches:
       - main
