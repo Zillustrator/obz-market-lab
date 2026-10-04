@@ -56,9 +56,12 @@ empty side has no best price and zero aggregate size. Other combinations are
 rejected by both the local encoder and the untrusted-input decoder.
 
 The feed sequence belongs to the publication stream, not to an individual
-order or the matching engine's internal order-priority sequence. Sequence gap,
-duplicate and reordering policy will be implemented by the feed processor. The
-codec preserves the value without maintaining stream state.
+order or the matching engine's internal order-priority sequence. The codec
+preserves the value without maintaining stream state. Feed processing may hold
+a bounded number of packets received ahead of the next expected sequence and
+release them if the gap closes. Exceeding the configured gap or capacity limit
+requires an application recovery decision such as requesting retransmission or
+obtaining a fresh snapshot.
 
 ## Error handling
 

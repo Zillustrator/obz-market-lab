@@ -1,5 +1,6 @@
 add_executable(obz_market_lab_market_data_feed_tests
     feed_encoder_tests.cpp
+    sequenced_buffer_tests.cpp
 )
 
 target_link_libraries(obz_market_lab_market_data_feed_tests

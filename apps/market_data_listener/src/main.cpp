@@ -1,4 +1,5 @@
 #include <obz/market_lab/market_data/multicast_receiver.hpp>
+#include <obz/market_lab/market_data/sequenced_buffer.hpp>
 
 #include <charconv>
 #include <cstddef>
@@ -9,6 +10,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <variant>
 
 namespace {
@@ -19,6 +21,8 @@ constexpr std::string_view default_group{"239.255.0.1"};
 constexpr std::uint16_t default_port{30001};
 constexpr std::string_view default_interface{"0.0.0.0"};
 constexpr std::size_t default_packet_count{3};
+constexpr std::size_t maximum_pending_packets{64};
+constexpr std::uint64_t maximum_sequence_gap{64};
 
 template <typename T>
 T parse_positive_integer(std::string_view text, std::string_view name) {
@@ -53,6 +57,26 @@ void print_packet(const packet& decoded) {
     std::cout << " aggregate_size=" << update.aggregate_size << '\n';
 }
 
+void print_buffer_error(sequence_result result, std::uint64_t sequence) {
+    switch (result) {
+    case sequence_result::old:
+        std::cerr << "discarded old packet sequence=" << sequence << '\n';
+        break;
+    case sequence_result::duplicate:
+        std::cerr << "discarded duplicate pending packet sequence=" << sequence << '\n';
+        break;
+    case sequence_result::gap_limit_exceeded:
+        std::cerr << "sequence gap limit exceeded at sequence=" << sequence << '\n';
+        break;
+    case sequence_result::capacity_exhausted:
+        std::cerr << "sequence buffer capacity exhausted at sequence=" << sequence << '\n';
+        break;
+    case sequence_result::ready:
+    case sequence_result::buffered:
+        break;
+    }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -80,6 +104,12 @@ int main(int argc, char** argv) {
                   << " count=" << packet_count << std::endl;
 
         bool received_invalid_packet{};
+        sequenced_buffer<packet> packets{
+            sequenced_buffer_limits{
+                .maximum_pending_values = maximum_pending_packets,
+                .maximum_sequence_gap = maximum_sequence_gap
+            }
+        };
 
         for (std::size_t index = 0; index < packet_count; ++index) {
             auto result = receiver.receive();
@@ -101,12 +131,32 @@ int main(int argc, char** argv) {
             }
 
             auto& received = std::get<received_packet>(result);
+            const auto sequence = received.value.sequence;
+            const auto ordering = packets.push(sequence, [&] {
+                return std::move(received.value);
+            });
 
-            // Exercise: track the expected feed sequence here. Decide how the receiver
-            // should report a gap, duplicate or reordered packet without confusing that
-            // stream policy with byte decoding or UDP transport errors.
+            if (ordering == sequence_result::ready) {
+                print_packet(received.value);
+                while (auto queued = packets.pop_ready()) {
+                    print_packet(*queued);
+                }
+                continue;
+            }
 
-            print_packet(received.value);
+            if (ordering != sequence_result::buffered) {
+                print_buffer_error(ordering, sequence);
+                received_invalid_packet = true;
+            }
+        }
+
+        if (packets.pending_size() != 0) {
+            std::cerr << "unresolved sequence gap";
+            if (const auto next = packets.next_sequence()) {
+                std::cerr << ": expected=" << *next;
+            }
+            std::cerr << " pending=" << packets.pending_size() << '\n';
+            received_invalid_packet = true;
         }
 
         return received_invalid_packet ? 1 : 0;
