@@ -64,6 +64,16 @@ many already-generated events are sent back-to-back, while `--interval-us`
 controls the pause between bursts. The first pass is intentionally ordered;
 fault injection and reordered delivery remain separate workloads.
 
+The corresponding VS Code tasks are:
+
+1. `Obz Market Lab macOS: Tracy Run Market Data Load Listener (Quiet)`
+2. Connect the Tracy profiler to the listener.
+3. `Obz Market Lab macOS: Tracy Publish Market Data Load`
+
+The separate `Tracy Run Market Data Demo Listener (Verbose)` task retains
+per-packet console output for inspecting the three-message walkthrough. Do not
+use that verbose task for performance captures.
+
 ## Instrumented Areas
 
 The current instrumentation covers:

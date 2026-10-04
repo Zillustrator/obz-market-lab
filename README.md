@@ -136,7 +136,8 @@ macOS tasks include:
 - `Obz Market Lab macOS: Benchmark Runner`
 - `Obz Market Lab macOS: Benchmark Market Data`
 - `Obz Market Lab macOS: Tracy Run Runner Benchmark`
-- `Obz Market Lab macOS: Tracy Run Market Data Listener`
+- `Obz Market Lab macOS: Tracy Run Market Data Demo Listener (Verbose)`
+- `Obz Market Lab macOS: Tracy Run Market Data Load Listener (Quiet)`
 - `Obz Market Lab macOS: Tracy Publish Market Data Load`
 
 Use the Run and Debug panel (`Cmd + Shift + D`) for launch configurations:

@@ -286,9 +286,27 @@
       "problemMatcher": []
     },
     {
-      "label": "Obz Market Lab macOS: Tracy Run Market Data Listener",
+      "label": "Obz Market Lab macOS: Tracy Run Market Data Demo Listener (Verbose)",
       "type": "shell",
       "command": "${workspaceFolder}/build-tracy-release/apps/market_data_listener/obz_market_data_listener",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": "Obz Market Lab macOS: Build Tracy Release",
+      "presentation": {
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Obz Market Lab macOS: Tracy Run Market Data Load Listener (Quiet)",
+      "type": "shell",
+      "command": "${workspaceFolder}/build-tracy-release/apps/market_data_listener/obz_market_data_listener",
+      "args": [
+        "--stop-after",
+        "100000",
+        "--quiet"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
