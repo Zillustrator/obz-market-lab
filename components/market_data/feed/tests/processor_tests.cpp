@@ -26,7 +26,7 @@ processor make_processor(std::uint64_t first_sequence = 1) {
 packet make_packet(std::uint64_t sequence) {
     return packet{
         sequence,
-        book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{100}, 5}
+        book_update{symbol_id{1}, side::buy, std::uint64_t{100}, 5}
     };
 }
 

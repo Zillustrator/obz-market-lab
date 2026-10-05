@@ -43,9 +43,15 @@ runner  -- ObzLib bounded_blocking_queue -->  engine
 ```
 
 The core `engine` is deliberately single-threaded. It owns the active
-order index and routes commands to one `order_book` per symbol. Each
+order index and routes commands to one `order_book` per numeric symbol ID. Each
 `order_book` owns its bid and ask price levels, preserving price-time priority
 with ordered price maps and FIFO queues at each level.
+
+The engine and market-data protocol carry strongly typed 32-bit symbol IDs.
+Human-readable names belong to reference data rather than hot-path orders and
+incremental feed messages. The replay parser assigns IDs to names in first-seen
+order within each scenario file; these local IDs are not a persistent reference
+data catalogue.
 
 The `runner` is the concurrency boundary. It serialises submit, update,
 cancel, and snapshot commands through an ObzLib bounded blocking queue and
@@ -203,9 +209,10 @@ cancel        <user> <client_order>
 snapshot      <instrument> <depth>
 ```
 
-The scenario parser is intentionally file-oriented: comments, blank lines, and
-line-numbered parse errors are for editable replay files rather than live socket
-protocol input.
+The scenario parser interns human-readable instrument names to numeric symbol
+IDs for each file. It is intentionally file-oriented: comments, blank lines,
+and line-numbered parse errors are for editable replay files rather than live
+socket protocol input.
 
 In VS Code, run `Obz Market Lab macOS: Run Replay Demo`,
 `Obz Market Lab macOS: Run Replay Demo JSONL`, or

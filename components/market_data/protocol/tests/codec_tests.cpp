@@ -9,7 +9,6 @@
 #include <optional>
 #include <span>
 #include <stdexcept>
-#include <string>
 #include <variant>
 #include <vector>
 
@@ -32,14 +31,14 @@ decode_error require_error(const decode_result& result) {
 packet priced_update() {
     return packet{
         42,
-        book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{101}, 7}
+        book_update{symbol_id{1}, side::buy, std::uint64_t{101}, 7}
     };
 }
 
 void require_book_update(
     const packet& decoded,
     std::uint64_t sequence,
-    const std::string& symbol,
+    symbol_id instrument,
     side direction,
     const std::optional<std::uint64_t>& best_price,
     std::uint64_t aggregate_size
@@ -48,7 +47,7 @@ void require_book_update(
 
     const auto* update = std::get_if<book_update>(&decoded.payload);
     REQUIRE(update != nullptr);
-    REQUIRE(update->symbol == symbol);
+    REQUIRE(update->instrument == instrument);
     REQUIRE(update->direction == direction);
     REQUIRE(update->best_price == best_price);
     REQUIRE(update->aggregate_size == aggregate_size);
@@ -61,7 +60,7 @@ TEST_CASE("market-data codec writes a stable network-byte-order packet", "[marke
 
     const std::vector<std::byte> expected{
         std::byte{0x4f}, std::byte{0x42}, std::byte{0x5a}, std::byte{0x4d},
-        std::byte{0x00}, std::byte{0x01},
+        std::byte{0x00}, std::byte{0x02},
         std::byte{0x00}, std::byte{0x01},
         std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
         std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x2a},
@@ -70,9 +69,7 @@ TEST_CASE("market-data codec writes a stable network-byte-order packet", "[marke
         std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x65},
         std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x00},
         std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x07},
-        std::byte{0x00}, std::byte{0x07},
-        std::byte{0x45}, std::byte{0x54}, std::byte{0x48}, std::byte{0x2d},
-        std::byte{0x55}, std::byte{0x53}, std::byte{0x44}
+        std::byte{0x00}, std::byte{0x00}, std::byte{0x00}, std::byte{0x01}
     };
 
     REQUIRE(bytes.size() == expected.size());
@@ -84,19 +81,19 @@ TEST_CASE("market-data codec round trips priced and empty book updates", "[marke
     require_book_update(
         require_packet(decode(encode(priced))),
         42,
-        std::string{"ETH-USD"},
+        symbol_id{1},
         side::buy,
         std::uint64_t{101},
         7);
 
     const packet empty{
         43,
-        book_update{std::string{"ETH-USD"}, side::sell, std::nullopt, 0}
+        book_update{symbol_id{1}, side::sell, std::nullopt, 0}
     };
     require_book_update(
         require_packet(decode(encode(empty))),
         43,
-        std::string{"ETH-USD"},
+        symbol_id{1},
         side::sell,
         std::nullopt,
         0);
@@ -104,16 +101,16 @@ TEST_CASE("market-data codec round trips priced and empty book updates", "[marke
 
 TEST_CASE("market-data encoder rejects non-canonical packets", "[market_data]") {
     REQUIRE_THROWS_AS(
-        encode(packet{0, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{100}, 2}}),
+        encode(packet{0, book_update{symbol_id{1}, side::buy, std::uint64_t{100}, 2}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        encode(packet{1, book_update{std::string{}, side::buy, std::uint64_t{100}, 2}}),
+        encode(packet{1, book_update{symbol_id{}, side::buy, std::uint64_t{100}, 2}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        encode(packet{1, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{0}, 2}}),
+        encode(packet{1, book_update{symbol_id{1}, side::buy, std::uint64_t{0}, 2}}),
         std::invalid_argument);
     REQUIRE_THROWS_AS(
-        encode(packet{1, book_update{std::string{"ETH-USD"}, side::buy, std::uint64_t{100}, 0}}),
+        encode(packet{1, book_update{symbol_id{1}, side::buy, std::uint64_t{100}, 0}}),
         std::invalid_argument);
 }
 
@@ -126,7 +123,7 @@ TEST_CASE("market-data decoder reports malformed headers", "[market_data]") {
     REQUIRE(require_error(decode(bytes)) == decode_error::invalid_signature);
 
     bytes = encode(priced_update());
-    bytes[5] = std::byte{2};
+    bytes[5] = std::byte{1};
     REQUIRE(require_error(decode(bytes)) == decode_error::unsupported_version);
 
     bytes = encode(priced_update());
@@ -154,10 +151,14 @@ TEST_CASE("market-data decoder reports malformed book updates", "[market_data]")
     REQUIRE(require_error(decode(bytes)) == decode_error::invalid_book_state);
 
     bytes = encode(priced_update());
-    bytes.resize(35);
+    bytes.resize(37);
     REQUIRE(require_error(decode(bytes)) == decode_error::body_truncated);
 
     bytes = encode(priced_update());
-    bytes[35] = std::byte{6};
+    bytes.push_back(std::byte{});
     REQUIRE(require_error(decode(bytes)) == decode_error::body_length_mismatch);
+
+    bytes = encode(priced_update());
+    std::fill(bytes.begin() + 34, bytes.end(), std::byte{});
+    REQUIRE(require_error(decode(bytes)) == decode_error::invalid_symbol);
 }

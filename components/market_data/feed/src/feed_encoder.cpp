@@ -31,7 +31,7 @@ book_update to_book_update(const matching::book_updated& update) {
     }
 
     return book_update{
-        update.instrument.value,
+        symbol_id{update.instrument.value},
         direction,
         best_price,
         update.total_size

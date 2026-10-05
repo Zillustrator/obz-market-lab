@@ -21,7 +21,7 @@ std::string to_string(side direction) {
     return "unknown";
 }
 
-std::ostream& operator<<(std::ostream& out, const symbol& value) {
+std::ostream& operator<<(std::ostream& out, const symbol_id& value) {
     return out << value.value;
 }
 

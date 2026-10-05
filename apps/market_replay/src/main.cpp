@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -20,6 +19,8 @@ namespace {
 
 using namespace obz::market_lab::matching;
 using namespace obz::market_lab::replay;
+
+constexpr symbol_id eth_usd{1};
 
 enum class output_format {
     text,
@@ -35,14 +36,14 @@ struct command_line_options {
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
@@ -187,32 +188,32 @@ std::vector<scenario_step> default_scenario() {
             0,
             "1. Rest a sell limit order at 100",
             scenario_submit{
-                make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5)
+                make_limit_order(1, 10, eth_usd, side::sell, 100, 5)
             }
         },
         scenario_step{
             0,
             "2. Rest a buy limit order at 99",
             scenario_submit{
-                make_limit_order(2, 20, "ETH-USD", side::buy, 99, 3)
+                make_limit_order(2, 20, eth_usd, side::buy, 99, 3)
             }
         },
         scenario_step{
             0,
             "3. Snapshot depth 5",
-            scenario_snapshot{snapshot_command{symbol{"ETH-USD"}, 5}}
+            scenario_snapshot{snapshot_command{eth_usd, 5}}
         },
         scenario_step{
             0,
             "4. Submit a buy limit order that crosses the ask",
             scenario_submit{
-                make_limit_order(3, 30, "ETH-USD", side::buy, 101, 4)
+                make_limit_order(3, 30, eth_usd, side::buy, 101, 4)
             }
         },
         scenario_step{
             0,
             "5. Snapshot depth 5",
-            scenario_snapshot{snapshot_command{symbol{"ETH-USD"}, 5}}
+            scenario_snapshot{snapshot_command{eth_usd, 5}}
         },
         scenario_step{
             0,
@@ -233,7 +234,7 @@ std::vector<scenario_step> default_scenario() {
         scenario_step{
             0,
             "8. Final snapshot depth 5",
-            scenario_snapshot{snapshot_command{symbol{"ETH-USD"}, 5}}
+            scenario_snapshot{snapshot_command{eth_usd, 5}}
         }
     };
 }

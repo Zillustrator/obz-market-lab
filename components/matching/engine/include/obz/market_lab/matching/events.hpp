@@ -39,13 +39,13 @@ struct order_cancelled {
 struct trade_executed {
     order_key aggressor;
     order_key resting;
-    symbol instrument;
+    symbol_id instrument;
     price execution_price;
     quantity executed_size;
 };
 
 struct book_updated {
-    symbol instrument;
+    symbol_id instrument;
     side direction{};
     std::optional<price> best_price;
     std::uint64_t total_size{};

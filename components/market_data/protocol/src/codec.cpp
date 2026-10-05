@@ -2,13 +2,10 @@
 
 #include <obz/endian.hpp>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
-#include <limits>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <type_traits>
 #include <variant>
 
@@ -25,7 +22,7 @@ constexpr std::size_t size{16};
 
 namespace book_update_layout {
 
-constexpr std::size_t fixed_size{20};
+constexpr std::size_t size{22};
 constexpr std::uint8_t has_price_flag{0x01};
 
 } // namespace book_update_layout
@@ -89,12 +86,8 @@ std::vector<std::byte> encode_book_update(
     const book_update& update,
     std::uint64_t sequence
 ) {
-    if (update.symbol.empty()) {
-        throw std::invalid_argument("book update symbol must not be empty");
-    }
-
-    if (update.symbol.size() > std::numeric_limits<std::uint16_t>::max()) {
-        throw std::invalid_argument("book update symbol is too long");
+    if (update.instrument.value == 0) {
+        throw std::invalid_argument("book update symbol id must be non-zero");
     }
 
     std::uint8_t encoded_side{};
@@ -118,9 +111,7 @@ std::vector<std::byte> encode_book_update(
             "book update must pair a price with positive aggregate size");
     }
 
-    const auto packet_size =
-        header_layout::size + book_update_layout::fixed_size +
-        update.symbol.size();
+    const auto packet_size = header_layout::size + book_update_layout::size;
     std::vector<std::byte> bytes(packet_size);
     encode_header(bytes, message_type::book_updated, sequence);
 
@@ -133,15 +124,7 @@ std::vector<std::byte> encode_book_update(
         destination,
         update.best_price.value_or(0));
     write_and_advance(destination, update.aggregate_size);
-    write_and_advance(
-        destination,
-        static_cast<std::uint16_t>(update.symbol.size()));
-
-    std::transform(
-        update.symbol.begin(),
-        update.symbol.end(),
-        destination.begin(),
-        [](unsigned char character) { return static_cast<std::byte>(character); });
+    write_and_advance(destination, update.instrument.value);
 
     return bytes;
 }
@@ -150,8 +133,11 @@ decode_result decode_book_update(
     std::span<const std::byte> body,
     std::uint64_t sequence
 ) {
-    if (body.size() < book_update_layout::fixed_size) {
+    if (body.size() < book_update_layout::size) {
         return decode_error::body_truncated;
+    }
+    if (body.size() != book_update_layout::size) {
+        return decode_error::body_length_mismatch;
     }
 
     auto source = body;
@@ -190,24 +176,14 @@ decode_result decode_book_update(
         return decode_error::invalid_book_state;
     }
 
-    const auto symbol_length = read_and_advance<std::uint16_t>(source);
-    if (symbol_length == 0) {
+    const auto instrument = symbol_id{read_and_advance<std::uint32_t>(source)};
+    if (instrument.value == 0) {
         return decode_error::invalid_symbol;
-    }
-
-    if (symbol_length != source.size()) {
-        return decode_error::body_length_mismatch;
-    }
-
-    std::string symbol;
-    symbol.reserve(symbol_length);
-    for (const auto value : source) {
-        symbol.push_back(static_cast<char>(std::to_integer<unsigned char>(value)));
     }
 
     return packet{
         sequence,
-        book_update{std::move(symbol), decoded_side, best_price, aggregate_size}
+        book_update{instrument, decoded_side, best_price, aggregate_size}
     };
 }
 

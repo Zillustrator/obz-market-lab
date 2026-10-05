@@ -9,7 +9,7 @@
 
 namespace obz::market_lab::matching {
 
-order_book::order_book(symbol instrument)
+order_book::order_book(symbol_id instrument)
     : instrument_(std::move(instrument)) {}
 
 order_book::submit_result order_book::submit(

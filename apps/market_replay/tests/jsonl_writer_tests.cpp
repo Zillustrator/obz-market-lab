@@ -31,12 +31,12 @@ TEST_CASE("jsonl writer writes events", "[replay][jsonl_writer]") {
             trade_executed{
                 key(2, 20),
                 key(1, 10),
-                symbol{"ETH-USD"},
+                symbol_id{1},
                 price{100},
                 quantity{5}
             },
-            book_updated{symbol{"ETH-USD"}, side::sell, price{101}, 3},
-            book_updated{symbol{"ETH-USD"}, side::buy, std::nullopt, 0}
+            book_updated{symbol_id{1}, side::sell, price{101}, 3},
+            book_updated{symbol_id{1}, side::buy, std::nullopt, 0}
         }
     );
 
@@ -44,9 +44,9 @@ TEST_CASE("jsonl writer writes events", "[replay][jsonl_writer]") {
         output.str() ==
         R"({"type":"submit_accepted","key":{"user":1,"client_order":10}}
 {"type":"update_accepted","key":{"user":1,"client_order":10}}
-{"type":"trade_executed","aggressor":{"user":2,"client_order":20},"resting":{"user":1,"client_order":10},"instrument":"ETH-USD","price":100,"size":5}
-{"type":"book_updated","instrument":"ETH-USD","side":"sell","best_price":101,"total_size":3}
-{"type":"book_updated","instrument":"ETH-USD","side":"buy","best_price":null,"total_size":0}
+{"type":"trade_executed","aggressor":{"user":2,"client_order":20},"resting":{"user":1,"client_order":10},"instrument_id":1,"price":100,"size":5}
+{"type":"book_updated","instrument_id":1,"side":"sell","best_price":101,"total_size":3}
+{"type":"book_updated","instrument_id":1,"side":"buy","best_price":null,"total_size":0}
 )"
     );
 }
@@ -77,7 +77,7 @@ TEST_CASE("jsonl writer writes snapshots", "[replay][jsonl_writer]") {
 
     writer.write_snapshot(
         book_snapshot{
-            symbol{"ETH-USD"},
+            symbol_id{1},
             std::vector<price_level_snapshot>{
                 price_level_snapshot{price{99}, 7}
             },
@@ -90,7 +90,7 @@ TEST_CASE("jsonl writer writes snapshots", "[replay][jsonl_writer]") {
 
     REQUIRE(
         output.str() ==
-        R"({"type":"snapshot","snapshot":{"instrument":"ETH-USD","bids":[{"price":99,"total_size":7}],"asks":[{"price":101,"total_size":4}]}}
+        R"({"type":"snapshot","snapshot":{"instrument_id":1,"bids":[{"price":99,"total_size":7}],"asks":[{"price":101,"total_size":4}]}}
 {"type":"snapshot","snapshot":null}
 )"
     );

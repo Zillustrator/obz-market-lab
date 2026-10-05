@@ -42,12 +42,6 @@ struct scenario_step {
 class scenario_parser final {
 public:
     std::vector<scenario_step> load(std::string_view path) const;
-
-private:
-    static scenario_command parse_command(
-        std::string_view line,
-        std::size_t line_number
-    );
 };
 
 } // namespace obz::market_lab::replay

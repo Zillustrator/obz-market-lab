@@ -3,26 +3,24 @@
 #include <benchmark/benchmark.h>
 
 #include <cstdint>
-#include <string>
-#include <utility>
 
 namespace {
 
 using namespace obz::market_lab::matching;
 
-constexpr auto default_symbol = "ETH-USD";
+constexpr symbol_id default_symbol{1};
 
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
@@ -32,13 +30,13 @@ submit_order make_limit_order(
 submit_order make_market_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<market_order>},
         quantity{size}
@@ -88,7 +86,7 @@ void cancel_resting_limit_order(benchmark::State& state) {
         const auto key = order_key{user_id{1}, client_order_id{client_order++}};
         benchmark::DoNotOptimize(engine.submit(submit_order{
             key,
-            symbol{default_symbol},
+            default_symbol,
             side::buy,
             order_pricing{std::in_place_type<limit_order>, price{100}},
             quantity{10}
@@ -108,7 +106,7 @@ void reduce_resting_order_size(benchmark::State& state) {
         const auto key = order_key{user_id{1}, client_order_id{client_order++}};
         benchmark::DoNotOptimize(engine.submit(submit_order{
             key,
-            symbol{default_symbol},
+            default_symbol,
             side::buy,
             order_pricing{std::in_place_type<limit_order>, price{100}},
             quantity{10}
@@ -132,7 +130,7 @@ void reprice_resting_order(benchmark::State& state) {
         const auto key = order_key{user_id{1}, client_order_id{client_order++}};
         benchmark::DoNotOptimize(engine.submit(submit_order{
             key,
-            symbol{default_symbol},
+            default_symbol,
             side::buy,
             order_pricing{std::in_place_type<limit_order>, price{100}},
             quantity{10}
@@ -235,7 +233,7 @@ void snapshot_seeded_book(benchmark::State& state) {
     }
 
     for (auto _ : state) {
-        benchmark::DoNotOptimize(engine.snapshot(symbol{default_symbol}, depth));
+        benchmark::DoNotOptimize(engine.snapshot(default_symbol, depth));
     }
 }
 

@@ -1,8 +1,9 @@
 #pragma once
 
+#include <obz/market_lab/market_data/messages.hpp>
+
 #include <cstdint>
 #include <optional>
-#include <string>
 
 namespace obz::market_lab::market_data {
 
@@ -14,7 +15,7 @@ struct top_of_book_level {
 };
 
 struct top_of_book_snapshot {
-    std::string symbol;
+    symbol_id instrument;
     std::uint64_t reference_sequence{};
     std::optional<top_of_book_level> best_bid;
     std::optional<top_of_book_level> best_ask;

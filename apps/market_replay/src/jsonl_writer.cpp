@@ -92,8 +92,7 @@ void jsonl_writer::write_snapshot(const std::optional<book_snapshot>& snapshot) 
         return;
     }
 
-    output_ << "{\"instrument\":";
-    write_json_string(output_, snapshot->instrument.value);
+    output_ << "{\"instrument_id\":" << snapshot->instrument.value;
     output_ << ",\"bids\":";
     write_price_levels(snapshot->bids);
     output_ << ",\"asks\":";
@@ -157,15 +156,13 @@ void jsonl_writer::write_event(const trade_executed& value) {
     write_key(value.aggressor);
     output_ << ",\"resting\":";
     write_key(value.resting);
-    output_ << ",\"instrument\":";
-    write_json_string(output_, value.instrument.value);
+    output_ << ",\"instrument_id\":" << value.instrument.value;
     output_ << ",\"price\":" << value.execution_price.value
             << ",\"size\":" << value.executed_size.value << "}\n";
 }
 
 void jsonl_writer::write_event(const book_updated& value) {
-    output_ << "{\"type\":\"book_updated\",\"instrument\":";
-    write_json_string(output_, value.instrument.value);
+    output_ << "{\"type\":\"book_updated\",\"instrument_id\":" << value.instrument.value;
     output_ << ",\"side\":";
     write_json_string(output_, to_string(value.direction));
     output_ << ",\"best_price\":";

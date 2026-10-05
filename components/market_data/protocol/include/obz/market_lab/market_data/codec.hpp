@@ -10,7 +10,7 @@
 
 namespace obz::market_lab::market_data {
 
-inline constexpr std::uint16_t protocol_version{1};
+inline constexpr std::uint16_t protocol_version{2};
 
 enum class message_type : std::uint16_t {
     book_updated = 1

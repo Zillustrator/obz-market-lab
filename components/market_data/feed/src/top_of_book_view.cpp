@@ -1,9 +1,11 @@
 #include <obz/market_lab/market_data/top_of_book_view.hpp>
 
+#include <functional>
+
 namespace obz::market_lab::market_data {
 
 void top_of_book_view::establish(const top_of_book_snapshot& snapshot) {
-    books_.insert_or_assign(snapshot.symbol, book{
+    books_.insert_or_assign(snapshot.instrument, book{
         top_of_book_state::current,
         snapshot.reference_sequence,
         snapshot.best_bid,
@@ -13,14 +15,14 @@ void top_of_book_view::establish(const top_of_book_snapshot& snapshot) {
 
 void top_of_book_view::invalidate() noexcept {
     stream_stale_ = true;
-    for (auto& [symbol, value] : books_) {
-        static_cast<void>(symbol);
+    for (auto& [instrument, value] : books_) {
+        static_cast<void>(instrument);
         value.state = top_of_book_state::stale;
     }
 }
 
-top_of_book_state top_of_book_view::state(std::string_view symbol) const {
-    const auto found = books_.find(std::string{symbol});
+top_of_book_state top_of_book_view::state(symbol_id instrument) const {
+    const auto found = books_.find(instrument);
     if (found != books_.end()) {
         return found->second.state;
     }
@@ -29,13 +31,13 @@ top_of_book_state top_of_book_view::state(std::string_view symbol) const {
         : top_of_book_state::awaiting_snapshot;
 }
 
-std::optional<top_of_book_snapshot> top_of_book_view::get(std::string_view symbol) const {
-    const auto found = books_.find(std::string{symbol});
+std::optional<top_of_book_snapshot> top_of_book_view::get(symbol_id instrument) const {
+    const auto found = books_.find(instrument);
     if (found == books_.end() || found->second.state != top_of_book_state::current) {
         return std::nullopt;
     }
     return top_of_book_snapshot{
-        found->first,
+        instrument,
         found->second.last_sequence,
         found->second.best_bid,
         found->second.best_ask
@@ -43,7 +45,7 @@ std::optional<top_of_book_snapshot> top_of_book_view::get(std::string_view symbo
 }
 
 void top_of_book_view::apply(std::uint64_t sequence, const book_update& update) {
-    const auto found = books_.find(update.symbol);
+    const auto found = books_.find(update.instrument);
     if (found == books_.end() || found->second.state != top_of_book_state::current ||
         sequence <= found->second.last_sequence) {
         return;
@@ -60,6 +62,10 @@ void top_of_book_view::apply(std::uint64_t sequence, const book_update& update) 
         book.best_ask = level;
     }
     book.last_sequence = sequence;
+}
+
+std::size_t top_of_book_view::symbol_id_hash::operator()(symbol_id instrument) const noexcept {
+    return std::hash<std::uint32_t>{}(instrument.value);
 }
 
 } // namespace obz::market_lab::market_data
