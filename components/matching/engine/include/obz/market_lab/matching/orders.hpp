@@ -23,7 +23,7 @@ using order_pricing = std::variant<limit_order, market_order>;
 
 struct submit_order {
     order_key key;
-    symbol instrument;
+    symbol_id instrument;
     side direction{};
     order_pricing pricing;
     quantity size;

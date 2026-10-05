@@ -81,7 +81,7 @@ std::vector<event> engine::cancel(const cancel_order& order) {
 }
 
 std::optional<book_snapshot> engine::snapshot(
-    const symbol& instrument,
+    const symbol_id& instrument,
     std::size_t depth
 ) const {
     OBZ_MARKET_LAB_TRACE_SCOPE();
@@ -100,8 +100,8 @@ std::size_t engine::order_key_hash::operator()(const order_key& key) const noexc
     return user_hash ^ (order_hash + 0x9e3779b97f4a7c15ULL + (user_hash << 6U) + (user_hash >> 2U));
 }
 
-std::size_t engine::symbol_hash::operator()(const symbol& instrument) const noexcept {
-    return std::hash<std::string>{}(instrument.value);
+std::size_t engine::symbol_hash::operator()(const symbol_id& instrument) const noexcept {
+    return std::hash<std::uint32_t>{}(instrument.value);
 }
 
 std::optional<std::string> engine::validate(const submit_order& order) {
@@ -113,8 +113,8 @@ std::optional<std::string> engine::validate(const submit_order& order) {
         return "client order id must be non-zero";
     }
 
-    if (order.instrument.empty()) {
-        return "symbol must not be empty";
+    if (order.instrument.value == 0) {
+        return "symbol id must be non-zero";
     }
 
     if (order.size.value == 0) {
@@ -162,13 +162,13 @@ std::vector<event> engine::reject_cancel(const order_key& key, std::string reaso
     };
 }
 
-order_book& engine::get_or_create_book(const symbol& instrument) {
+order_book& engine::get_or_create_book(const symbol_id& instrument) {
     auto [it, inserted] = books_.try_emplace(instrument, instrument);
     static_cast<void>(inserted);
     return it->second;
 }
 
-order_book* engine::find_book(const symbol& instrument) {
+order_book* engine::find_book(const symbol_id& instrument) {
     auto it = books_.find(instrument);
     if (it == books_.end()) {
         return nullptr;
@@ -177,7 +177,7 @@ order_book* engine::find_book(const symbol& instrument) {
     return &it->second;
 }
 
-const order_book* engine::find_book(const symbol& instrument) const {
+const order_book* engine::find_book(const symbol_id& instrument) const {
     auto it = books_.find(instrument);
     if (it == books_.end()) {
         return nullptr;

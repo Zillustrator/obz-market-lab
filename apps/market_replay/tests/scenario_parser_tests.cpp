@@ -81,7 +81,7 @@ snapshot ETH-USD 5
     const auto& limit_submit = require_command<scenario_submit>(steps[0]);
     REQUIRE(steps[0].line_number == 3);
     REQUIRE(limit_submit.order.key == order_key{user_id{1}, client_order_id{10}});
-    REQUIRE(limit_submit.order.instrument == symbol{"ETH-USD"});
+    REQUIRE(limit_submit.order.instrument == symbol_id{1});
     REQUIRE(limit_submit.order.direction == side::sell);
     REQUIRE(limit_submit.order.size == quantity{5});
     REQUIRE(std::holds_alternative<limit_order>(limit_submit.order.pricing));
@@ -103,7 +103,7 @@ snapshot ETH-USD 5
     REQUIRE(cancel.order.key == order_key{user_id{1}, client_order_id{10}});
 
     const auto& snapshot = require_command<scenario_snapshot>(steps[4]);
-    REQUIRE(snapshot.command.instrument == symbol{"ETH-USD"});
+    REQUIRE(snapshot.command.instrument == symbol_id{1});
     REQUIRE(snapshot.command.depth == 5);
 }
 
@@ -126,10 +126,27 @@ TEST_CASE("scenario parser accepts flexible whitespace", "[replay][scenario_pars
 
     const auto& submit = require_command<scenario_submit>(steps[0]);
     REQUIRE(submit.order.key == order_key{user_id{1}, client_order_id{10}});
-    REQUIRE(submit.order.instrument == symbol{"ETH-USD"});
+    REQUIRE(submit.order.instrument == symbol_id{1});
     REQUIRE(submit.order.direction == side::sell);
     REQUIRE(submit.order.size == quantity{5});
     REQUIRE(std::get<limit_order>(submit.order.pricing).limit_price == price{100});
+}
+
+TEST_CASE("scenario parser interns names within each file", "[replay][scenario_parser]") {
+    const auto first = load_scenario(
+        "submit limit 1 10 SOL-USD buy 100 5\n"
+        "submit limit 1 11 ETH-USD sell 101 3\n"
+        "snapshot SOL-USD 5\n"
+        "snapshot ETH-USD 5\n"
+    );
+
+    REQUIRE(require_command<scenario_submit>(first[0]).order.instrument == symbol_id{1});
+    REQUIRE(require_command<scenario_submit>(first[1]).order.instrument == symbol_id{2});
+    REQUIRE(require_command<scenario_snapshot>(first[2]).command.instrument == symbol_id{1});
+    REQUIRE(require_command<scenario_snapshot>(first[3]).command.instrument == symbol_id{2});
+
+    const auto second = load_scenario("snapshot ETH-USD 5\n");
+    REQUIRE(require_command<scenario_snapshot>(second[0]).command.instrument == symbol_id{1});
 }
 
 TEST_CASE("scenario parser rejects malformed commands", "[replay][scenario_parser]") {

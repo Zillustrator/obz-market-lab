@@ -80,14 +80,14 @@ public:
     };
 
     struct order_book_snapshot {
-        symbol instrument;
+        symbol_id instrument;
         std::vector<price_level_snapshot> bids;
         std::vector<price_level_snapshot> asks;
 
         bool operator==(const order_book_snapshot&) const = default;
     };
 
-    explicit order_book(symbol instrument);
+    explicit order_book(symbol_id instrument);
 
     submit_result submit(const submit_order& order, sequence_number sequence);
     update_result update(
@@ -210,7 +210,7 @@ private:
         std::vector<event>& events
     ) const;
 
-    symbol instrument_;
+    symbol_id instrument_;
     bid_levels bids_;
     ask_levels asks_;
 };

@@ -8,7 +8,6 @@
 #include <limits>
 #include <optional>
 #include <stdexcept>
-#include <string>
 #include <variant>
 
 namespace {
@@ -31,7 +30,7 @@ const market_data::book_update& require_book_update(const market_data::packet& p
 
 matching::event priced_update(matching::side direction) {
     return matching::book_updated{
-        matching::symbol{"ETH-USD"},
+        matching::symbol_id{1},
         direction,
         matching::price{101},
         7
@@ -61,13 +60,13 @@ TEST_CASE("feed encoder translates matching book updates and assigns consecutive
     const auto& priced_packet = decode_datagram(*priced);
     const auto& priced_body = require_book_update(priced_packet);
     REQUIRE(priced_packet.sequence == 1);
-    REQUIRE(priced_body.symbol == "ETH-USD");
+    REQUIRE(priced_body.instrument == market_data::symbol_id{1});
     REQUIRE(priced_body.direction == market_data::side::sell);
     REQUIRE(priced_body.best_price == std::uint64_t{101});
     REQUIRE(priced_body.aggregate_size == 7);
 
     const matching::event empty = matching::book_updated{
-        matching::symbol{"ETH-USD"},
+        matching::symbol_id{1},
         matching::side::buy,
         std::nullopt,
         0

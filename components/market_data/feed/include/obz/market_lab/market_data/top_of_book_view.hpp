@@ -3,10 +3,9 @@
 #include <obz/market_lab/market_data/messages.hpp>
 #include <obz/market_lab/market_data/top_of_book.hpp>
 
+#include <cstddef>
 #include <cstdint>
 #include <optional>
-#include <string>
-#include <string_view>
 #include <unordered_map>
 
 namespace obz::market_lab::market_data {
@@ -23,8 +22,8 @@ public:
     void apply(std::uint64_t sequence, const book_update& update);
     void invalidate() noexcept;
 
-    top_of_book_state state(std::string_view symbol) const;
-    std::optional<top_of_book_snapshot> get(std::string_view symbol) const;
+    top_of_book_state state(symbol_id instrument) const;
+    std::optional<top_of_book_snapshot> get(symbol_id instrument) const;
 
 private:
     struct book {
@@ -34,7 +33,11 @@ private:
         std::optional<top_of_book_level> best_ask;
     };
 
-    std::unordered_map<std::string, book> books_;
+    struct symbol_id_hash {
+        std::size_t operator()(symbol_id instrument) const noexcept;
+    };
+
+    std::unordered_map<symbol_id, book, symbol_id_hash> books_;
     bool stream_stale_{};
 };
 

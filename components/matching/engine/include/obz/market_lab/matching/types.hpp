@@ -3,25 +3,18 @@
 #include <compare>
 #include <cstdint>
 #include <stdexcept>
-#include <string>
-#include <utility>
 
 namespace obz::market_lab::matching {
 
-struct symbol {
-    std::string value;
+struct symbol_id {
+    std::uint32_t value{};
 
-    symbol() = default;
+    constexpr symbol_id() = default;
+    constexpr explicit symbol_id(std::uint32_t id) noexcept
+        : value(id) {}
 
-    explicit symbol(std::string text)
-        : value(std::move(text)) {}
-
-    bool empty() const noexcept {
-        return value.empty();
-    }
-
-    bool operator==(const symbol&) const = default;
-    auto operator<=>(const symbol&) const = default;
+    bool operator==(const symbol_id&) const = default;
+    auto operator<=>(const symbol_id&) const = default;
 };
 
 struct user_id {

@@ -19,7 +19,7 @@ struct update_command {
 };
 
 struct snapshot_command {
-    symbol instrument;
+    symbol_id instrument;
     std::size_t depth{};
 };
 

@@ -6,8 +6,6 @@
 #include <cstdint>
 #include <future>
 #include <stdexcept>
-#include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -49,14 +47,14 @@ void require_event_count(const std::vector<event>& events, std::size_t expected)
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
@@ -83,7 +81,7 @@ TEST_CASE("matching runner requires explicit start", "[matching_runtime]") {
 
     REQUIRE_FALSE(runner.running());
     REQUIRE_THROWS_AS(
-        runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 1)}),
+        runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 1)}),
         std::runtime_error
     );
 }
@@ -92,14 +90,14 @@ TEST_CASE("matching runner submits commands through queue", "[matching_runtime]"
     runner runner{8};
     runner.start();
 
-    auto future = runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 7)});
+    auto future = runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 7)});
     const auto events = get_ready(future);
 
     require_event_count(events, 2);
     require_event<submit_accepted>(events, 0);
 
     const auto& update = require_event<book_updated>(events, 1);
-    REQUIRE(update.instrument == symbol{"ETH-USD"});
+    REQUIRE(update.instrument == symbol_id{1});
     REQUIRE(update.direction == side::buy);
     REQUIRE(update.best_price == price{100});
     REQUIRE(update.total_size == 7);
@@ -112,8 +110,8 @@ TEST_CASE("matching runner preserves command ordering", "[matching_runtime]") {
     runner runner{8};
     runner.start();
 
-    auto resting = runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5)});
-    auto crossing = runner.submit(submit_command{make_limit_order(2, 20, "ETH-USD", side::buy, 100, 5)});
+    auto resting = runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 5)});
+    auto crossing = runner.submit(submit_command{make_limit_order(2, 20, symbol_id{1}, side::buy, 100, 5)});
 
     require_event<submit_accepted>(get_ready(resting), 0);
 
@@ -132,7 +130,7 @@ TEST_CASE("matching runner cancels resting orders through queue", "[matching_run
     runner.start();
 
     require_event<submit_accepted>(
-        get_ready(runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5)})),
+        get_ready(runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5)})),
         0
     );
 
@@ -157,7 +155,7 @@ TEST_CASE("matching runner updates resting orders through queue", "[matching_run
     runner.start();
 
     require_event<submit_accepted>(
-        get_ready(runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5)})),
+        get_ready(runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5)})),
         0
     );
 
@@ -180,15 +178,15 @@ TEST_CASE("matching runner snapshots through queue", "[matching_runtime]") {
     runner.start();
 
     require_event<submit_accepted>(
-        get_ready(runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5)})),
+        get_ready(runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5)})),
         0
     );
 
-    auto snapshot_future = runner.snapshot(snapshot_command{symbol{"ETH-USD"}, 1});
+    auto snapshot_future = runner.snapshot(snapshot_command{symbol_id{1}, 1});
     const auto snapshot = get_ready(snapshot_future);
 
     REQUIRE(snapshot.has_value());
-    REQUIRE(snapshot->instrument == symbol{"ETH-USD"});
+    REQUIRE(snapshot->instrument == symbol_id{1});
     REQUIRE(snapshot->bids.size() == 1);
     REQUIRE(snapshot->bids[0].level_price == price{100});
     REQUIRE(snapshot->bids[0].total_size == 5);
@@ -201,8 +199,8 @@ TEST_CASE("matching runner stop drains queued commands", "[matching_runtime]") {
     runner runner{16};
     runner.start();
 
-    auto first = runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 1)});
-    auto second = runner.submit(submit_command{make_limit_order(1, 11, "ETH-USD", side::buy, 101, 1)});
+    auto first = runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 1)});
+    auto second = runner.submit(submit_command{make_limit_order(1, 11, symbol_id{1}, side::buy, 101, 1)});
 
     runner.stop();
 
@@ -217,7 +215,7 @@ TEST_CASE("matching runner rejects commands after stop", "[matching_runtime]") {
     runner.stop();
 
     REQUIRE_THROWS_AS(
-        runner.submit(submit_command{make_limit_order(1, 10, "ETH-USD", side::buy, 100, 1)}),
+        runner.submit(submit_command{make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 1)}),
         std::runtime_error
     );
 }

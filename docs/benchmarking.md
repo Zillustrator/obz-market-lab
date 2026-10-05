@@ -139,3 +139,46 @@ and the preparation of encoded input are outside the timed sections.
 These numbers establish a local comparison baseline. They do not describe
 network throughput because receiving, kernel scheduling, logging and downstream
 application work are absent.
+
+### Numeric symbol-ID comparison
+
+Replacing the owning symbol string with a strongly typed 32-bit ID reduced the
+following in-memory representations on the Apple Silicon Clang/libc++ build:
+
+| Type | String symbol | Numeric symbol ID |
+| --- | ---: | ---: |
+| Matching symbol value | 24 B | 4 B |
+| `submit_order` | 72 B | 48 B |
+| `book_updated` | 56 B | 32 B |
+| Matching `event` variant | 80 B | 64 B |
+| Protocol `book_update` | 56 B | 32 B |
+| Protocol `message` variant | 64 B | 40 B |
+| Protocol `packet` | 72 B | 48 B |
+
+The version 2 encoded top-of-book packet is a fixed 38 bytes, compared with 43
+bytes for the version 1 packet containing the seven-character `ETH-USD` symbol.
+C++ object sizes are ABI and platform dependent; wire sizes are protocol
+contracts.
+
+On 2026-10-05, both revision `5576f5e` and the symbol-ID working tree were
+built in Release mode with AppleClang 21 and Google Benchmark 1.9.1 on the same
+Mac. Each case ran three repetitions with `--benchmark_min_time=0.1s`; the table
+uses median CPU time. Lower is better.
+
+| Benchmark | String symbol | Numeric symbol ID | Change |
+| --- | ---: | ---: | ---: |
+| `decode_book_update` | 12.36 ns | 4.45 ns | 64% faster |
+| `synchronous_in_order` | 16.45 ns | 6.94 ns | 58% faster |
+| `synchronous_burst/64` | 1,395 ns | 738 ns | 47% faster |
+| `synchronous_burst/256` | 4,262 ns | 1,842 ns | 57% faster |
+| `resting_limit_submit` | 100.47 ns | 87.75 ns | 13% faster |
+| `one_level_match` | 647.16 ns | 628.78 ns | 3% faster |
+| `runner_submit_round_trip` | 2,452.50 ns | 2,375.87 ns | 3% faster |
+| `runner_cancel_round_trip` | 2,993.71 ns | 3,061.07 ns | 2% slower |
+
+The feed cases measure decoding and synchronous processing of prepared packets,
+without socket I/O or console output. The runner cases are dominated by thread
+scheduling and queue handoff, so their small differences are not evidence of a
+meaningful change. The matching cases show smaller improvements than the feed
+cases. Repeated runs under controlled machine load would give tighter timing
+estimates.

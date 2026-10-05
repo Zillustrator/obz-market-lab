@@ -4,8 +4,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <string>
-#include <utility>
 #include <variant>
 #include <vector>
 
@@ -35,14 +33,14 @@ void require_event_count(const std::vector<event>& events, std::size_t expected)
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
@@ -52,13 +50,13 @@ submit_order make_limit_order(
 submit_order make_market_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<market_order>},
         quantity{size}
@@ -95,13 +93,13 @@ update_order make_market_update(
 TEST_CASE("resting limit order updates top of book", "[matching]") {
     engine engine;
 
-    const auto events = engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 7));
+    const auto events = engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 7));
 
     require_event_count(events, 2);
     require_event<submit_accepted>(events, 0);
 
     const auto& update = require_event<book_updated>(events, 1);
-    REQUIRE(update.instrument == symbol{"ETH-USD"});
+    REQUIRE(update.instrument == symbol_id{1});
     REQUIRE(update.direction == side::buy);
     REQUIRE(update.best_price == price{100});
     REQUIRE(update.total_size == 7);
@@ -110,8 +108,8 @@ TEST_CASE("resting limit order updates top of book", "[matching]") {
 TEST_CASE("limit order matches resting opposite side at resting price", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 10));
-    const auto events = engine.submit(make_limit_order(2, 20, "ETH-USD", side::buy, 105, 4));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 10));
+    const auto events = engine.submit(make_limit_order(2, 20, symbol_id{1}, side::buy, 105, 4));
 
     require_event_count(events, 3);
     require_event<submit_accepted>(events, 0);
@@ -131,9 +129,9 @@ TEST_CASE("limit order matches resting opposite side at resting price", "[matchi
 TEST_CASE("matching respects price-time priority", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 10));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 100, 10));
-    const auto events = engine.submit(make_limit_order(3, 30, "ETH-USD", side::buy, 100, 15));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 10));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 100, 10));
+    const auto events = engine.submit(make_limit_order(3, 30, symbol_id{1}, side::buy, 100, 15));
 
     require_event_count(events, 4);
 
@@ -153,11 +151,11 @@ TEST_CASE("matching respects price-time priority", "[matching]") {
 TEST_CASE("limit order crosses multiple price levels", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 3));
-    engine.submit(make_limit_order(1, 11, "ETH-USD", side::sell, 101, 4));
-    engine.submit(make_limit_order(1, 12, "ETH-USD", side::sell, 102, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 3));
+    engine.submit(make_limit_order(1, 11, symbol_id{1}, side::sell, 101, 4));
+    engine.submit(make_limit_order(1, 12, symbol_id{1}, side::sell, 102, 5));
 
-    const auto events = engine.submit(make_limit_order(2, 20, "ETH-USD", side::buy, 101, 10));
+    const auto events = engine.submit(make_limit_order(2, 20, symbol_id{1}, side::buy, 101, 10));
 
     require_event_count(events, 5);
 
@@ -181,7 +179,7 @@ TEST_CASE("limit order crosses multiple price levels", "[matching]") {
     REQUIRE(ask_update.best_price == price{102});
     REQUIRE(ask_update.total_size == 5);
 
-    const auto snapshot = engine.snapshot(symbol{"ETH-USD"}, 2);
+    const auto snapshot = engine.snapshot(symbol_id{1}, 2);
     REQUIRE(snapshot.has_value());
     REQUIRE(snapshot->bids.size() == 1);
     REQUIRE(snapshot->bids[0].level_price == price{101});
@@ -193,20 +191,20 @@ TEST_CASE("limit order crosses multiple price levels", "[matching]") {
 TEST_CASE("market order does not rest", "[matching]") {
     engine engine;
 
-    const auto first_events = engine.submit(make_market_order(1, 10, "ETH-USD", side::buy, 5));
+    const auto first_events = engine.submit(make_market_order(1, 10, symbol_id{1}, side::buy, 5));
     require_event_count(first_events, 1);
     require_event<submit_accepted>(first_events, 0);
 
-    const auto second_events = engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
+    const auto second_events = engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
     require_event<submit_accepted>(second_events, 0);
 }
 
 TEST_CASE("partially filled market order expires", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 4));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 4));
 
-    const auto events = engine.submit(make_market_order(2, 20, "ETH-USD", side::buy, 10));
+    const auto events = engine.submit(make_market_order(2, 20, symbol_id{1}, side::buy, 10));
 
     require_event_count(events, 3);
 
@@ -219,7 +217,7 @@ TEST_CASE("partially filled market order expires", "[matching]") {
     REQUIRE(!update.best_price.has_value());
     REQUIRE(update.total_size == 0);
 
-    const auto snapshot = engine.snapshot(symbol{"ETH-USD"}, 1);
+    const auto snapshot = engine.snapshot(symbol_id{1}, 1);
     REQUIRE(snapshot.has_value());
     REQUIRE(snapshot->bids.empty());
     REQUIRE(snapshot->asks.empty());
@@ -228,7 +226,7 @@ TEST_CASE("partially filled market order expires", "[matching]") {
 TEST_CASE("cancellation removes resting order", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
     const auto events = engine.cancel(cancel_order{order_key{user_id{1}, client_order_id{10}}});
 
     require_event_count(events, 2);
@@ -243,8 +241,8 @@ TEST_CASE("cancellation removes resting order", "[matching]") {
 TEST_CASE("partially filled resting order can be cancelled", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 10));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::buy, 100, 4));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 10));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::buy, 100, 4));
 
     const auto events = engine.cancel(cancel_order{order_key{user_id{1}, client_order_id{10}}});
 
@@ -260,8 +258,8 @@ TEST_CASE("partially filled resting order can be cancelled", "[matching]") {
 TEST_CASE("cancel after full fill is rejected", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::buy, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::buy, 100, 5));
 
     const auto events = engine.cancel(cancel_order{order_key{user_id{1}, client_order_id{10}}});
 
@@ -270,16 +268,16 @@ TEST_CASE("cancel after full fill is rejected", "[matching]") {
     REQUIRE(rejection.reason == "order is not active");
 }
 
-TEST_CASE("books are separated by symbol", "[matching]") {
+TEST_CASE("books are separated by symbol_id", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5));
-    engine.submit(make_limit_order(2, 20, "BTC-USD", side::sell, 100, 5));
-    const auto events = engine.submit(make_limit_order(3, 30, "ETH-USD", side::buy, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{2}, side::sell, 100, 5));
+    const auto events = engine.submit(make_limit_order(3, 30, symbol_id{1}, side::buy, 100, 5));
 
     require_event_count(events, 3);
     const auto& trade = require_event<trade_executed>(events, 1);
-    REQUIRE(trade.instrument == symbol{"ETH-USD"});
+    REQUIRE(trade.instrument == symbol_id{1});
     REQUIRE(trade.resting == order_key{user_id{1}, client_order_id{10}});
 }
 
@@ -288,7 +286,7 @@ TEST_CASE("invalid and duplicate orders are rejected", "[matching]") {
 
     const submit_order invalid_order{
         order_key{user_id{1}, client_order_id{10}},
-        symbol{},
+        symbol_id{},
         side::buy,
         order_pricing{std::in_place_type<limit_order>, price{100}},
         quantity{5}
@@ -297,10 +295,10 @@ TEST_CASE("invalid and duplicate orders are rejected", "[matching]") {
     const auto invalid_events = engine.submit(invalid_order);
     require_event_count(invalid_events, 1);
     const auto& invalid_rejection = require_event<submit_rejected>(invalid_events, 0);
-    REQUIRE(invalid_rejection.reason == "symbol must not be empty");
+    REQUIRE(invalid_rejection.reason == "symbol id must be non-zero");
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
-    const auto duplicate_events = engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 99, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
+    const auto duplicate_events = engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 99, 5));
     const auto& rejection = require_event<submit_rejected>(duplicate_events, 0);
     REQUIRE(rejection.reason == "order key is already active");
 }
@@ -318,8 +316,8 @@ TEST_CASE("inactive cancel is rejected", "[matching]") {
 TEST_CASE("reducing resting order size preserves time priority", "[matching][update]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 100, 5));
 
     const auto update_events = engine.update(make_limit_update(1, 10, 100, 3));
 
@@ -331,7 +329,7 @@ TEST_CASE("reducing resting order size preserves time priority", "[matching][upd
     REQUIRE(update.best_price == price{100});
     REQUIRE(update.total_size == 8);
 
-    const auto match_events = engine.submit(make_limit_order(3, 30, "ETH-USD", side::buy, 100, 4));
+    const auto match_events = engine.submit(make_limit_order(3, 30, symbol_id{1}, side::buy, 100, 4));
 
     require_event_count(match_events, 4);
 
@@ -347,8 +345,8 @@ TEST_CASE("reducing resting order size preserves time priority", "[matching][upd
 TEST_CASE("increasing resting order size loses time priority", "[matching][update]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 5));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 100, 5));
 
     const auto update_events = engine.update(make_limit_update(1, 10, 100, 6));
 
@@ -360,7 +358,7 @@ TEST_CASE("increasing resting order size loses time priority", "[matching][updat
     REQUIRE(update.best_price == price{100});
     REQUIRE(update.total_size == 11);
 
-    const auto match_events = engine.submit(make_limit_order(3, 30, "ETH-USD", side::buy, 100, 5));
+    const auto match_events = engine.submit(make_limit_order(3, 30, symbol_id{1}, side::buy, 100, 5));
 
     require_event_count(match_events, 3);
 
@@ -372,8 +370,8 @@ TEST_CASE("increasing resting order size loses time priority", "[matching][updat
 TEST_CASE("repricing resting order can cross the book", "[matching][update]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 105, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 105, 5));
 
     const auto update_events = engine.update(make_limit_update(2, 20, 100, 5));
 
@@ -412,7 +410,7 @@ TEST_CASE("inactive update is rejected", "[matching][update]") {
 TEST_CASE("market-priced update is rejected", "[matching][update]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
 
     const auto events = engine.update(make_market_update(1, 10, 5));
 
@@ -424,17 +422,17 @@ TEST_CASE("market-priced update is rejected", "[matching][update]") {
 TEST_CASE("snapshots return deterministic depth levels", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 99, 3));
-    engine.submit(make_limit_order(1, 11, "ETH-USD", side::buy, 101, 5));
-    engine.submit(make_limit_order(1, 12, "ETH-USD", side::buy, 100, 7));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 105, 11));
-    engine.submit(make_limit_order(2, 21, "ETH-USD", side::sell, 103, 13));
-    engine.submit(make_limit_order(2, 22, "ETH-USD", side::sell, 104, 17));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 99, 3));
+    engine.submit(make_limit_order(1, 11, symbol_id{1}, side::buy, 101, 5));
+    engine.submit(make_limit_order(1, 12, symbol_id{1}, side::buy, 100, 7));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 105, 11));
+    engine.submit(make_limit_order(2, 21, symbol_id{1}, side::sell, 103, 13));
+    engine.submit(make_limit_order(2, 22, symbol_id{1}, side::sell, 104, 17));
 
-    const auto snapshot = engine.snapshot(symbol{"ETH-USD"}, 2);
+    const auto snapshot = engine.snapshot(symbol_id{1}, 2);
 
     REQUIRE(snapshot.has_value());
-    REQUIRE(snapshot->instrument == symbol{"ETH-USD"});
+    REQUIRE(snapshot->instrument == symbol_id{1});
     REQUIRE(snapshot->bids.size() == 2);
     REQUIRE(snapshot->asks.size() == 2);
 
@@ -452,10 +450,10 @@ TEST_CASE("snapshots return deterministic depth levels", "[matching]") {
 TEST_CASE("zero depth snapshot returns empty sides", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::buy, 100, 5));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::sell, 105, 7));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::buy, 100, 5));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::sell, 105, 7));
 
-    const auto snapshot = engine.snapshot(symbol{"ETH-USD"}, 0);
+    const auto snapshot = engine.snapshot(symbol_id{1}, 0);
 
     REQUIRE(snapshot.has_value());
     REQUIRE(snapshot->bids.empty());
@@ -465,10 +463,10 @@ TEST_CASE("zero depth snapshot returns empty sides", "[matching]") {
 TEST_CASE("snapshot reflects partial fill and cancel", "[matching]") {
     engine engine;
 
-    engine.submit(make_limit_order(1, 10, "ETH-USD", side::sell, 100, 10));
-    engine.submit(make_limit_order(2, 20, "ETH-USD", side::buy, 100, 4));
+    engine.submit(make_limit_order(1, 10, symbol_id{1}, side::sell, 100, 10));
+    engine.submit(make_limit_order(2, 20, symbol_id{1}, side::buy, 100, 4));
 
-    const auto partial_snapshot = engine.snapshot(symbol{"ETH-USD"}, 1);
+    const auto partial_snapshot = engine.snapshot(symbol_id{1}, 1);
     REQUIRE(partial_snapshot.has_value());
     REQUIRE(partial_snapshot->asks.size() == 1);
     REQUIRE(partial_snapshot->asks[0].level_price == price{100});
@@ -476,16 +474,16 @@ TEST_CASE("snapshot reflects partial fill and cancel", "[matching]") {
 
     engine.cancel(cancel_order{order_key{user_id{1}, client_order_id{10}}});
 
-    const auto cancelled_snapshot = engine.snapshot(symbol{"ETH-USD"}, 1);
+    const auto cancelled_snapshot = engine.snapshot(symbol_id{1}, 1);
     REQUIRE(cancelled_snapshot.has_value());
     REQUIRE(cancelled_snapshot->bids.empty());
     REQUIRE(cancelled_snapshot->asks.empty());
 }
 
-TEST_CASE("missing symbol snapshot is empty", "[matching]") {
+TEST_CASE("missing symbol_id snapshot is empty", "[matching]") {
     engine engine;
 
-    const auto snapshot = engine.snapshot(symbol{"ETH-USD"}, 1);
+    const auto snapshot = engine.snapshot(symbol_id{1}, 1);
 
     REQUIRE(!snapshot.has_value());
 }

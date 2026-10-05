@@ -24,10 +24,10 @@ decoded.
 
 ## Common header
 
-| Offset | Width | Field | Version 1 value |
+| Offset | Width | Field | Version 2 value |
 |---:|---:|---|---|
 | 0 | 4 | Protocol signature | ASCII `OBZM` |
-| 4 | 2 | Protocol version | `1` |
+| 4 | 2 | Protocol version | `2` |
 | 6 | 2 | Message type | `1` for `book_updated` |
 | 8 | 8 | Feed sequence | Positive, monotonically increasing publisher sequence |
 
@@ -40,14 +40,17 @@ is discarded in full; the next receive begins at the next datagram.
 Body offsets start at zero, immediately after the common header. The equivalent
 packet offset is the body offset plus 16 bytes.
 
-| Body offset | Width | Field | Version 1 value |
+| Body offset | Width | Field | Version 2 value |
 |---:|---:|---|---|
 | 0 | 1 | Side | `0` buy, `1` sell |
 | 1 | 1 | Flags | Bit 0 means best price is present |
 | 2 | 8 | Best price | Positive when present; zero when absent |
 | 10 | 8 | Aggregate size | Positive when price is present; zero when absent |
-| 18 | 2 | Symbol length | Positive number of following symbol bytes |
-| 20 | variable | Symbol | Exactly `symbol length` bytes |
+| 18 | 4 | Symbol ID | Positive numeric instrument identifier |
+
+The version 2 `book_updated` body is therefore always 22 bytes and the complete
+packet is always 38 bytes. Symbol names and other reference data are distributed
+separately; they do not enlarge every hot-path incremental update.
 
 ## Canonical book state
 
@@ -70,6 +73,6 @@ programming or upstream-domain error. Decoding malformed network input returns
 a `decode_error`; malformed traffic is expected input and does not use
 exceptions for control flow.
 
-Version 1 currently supports only `book_updated`. New message types can extend
+Version 2 currently supports only `book_updated`. New message types can extend
 the payload variant while retaining the common header. An incompatible wire
 change requires a new protocol version.

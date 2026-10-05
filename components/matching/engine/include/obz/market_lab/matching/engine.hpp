@@ -21,7 +21,7 @@ public:
     std::vector<event> update(const update_order& order);
     std::vector<event> cancel(const cancel_order& order);
     std::optional<book_snapshot> snapshot(
-        const symbol& instrument,
+        const symbol_id& instrument,
         std::size_t depth
     ) const;
 
@@ -31,15 +31,15 @@ private:
     };
 
     struct symbol_hash {
-        std::size_t operator()(const symbol& instrument) const noexcept;
+        std::size_t operator()(const symbol_id& instrument) const noexcept;
     };
 
     struct active_order {
-        symbol instrument;
+        symbol_id instrument;
         order_book::resting_order_handle handle;
     };
 
-    using book_map = std::unordered_map<symbol, order_book, symbol_hash>;
+    using book_map = std::unordered_map<symbol_id, order_book, symbol_hash>;
     using active_order_map = std::unordered_map<order_key, active_order, order_key_hash>;
 
     static std::optional<std::string> validate(const submit_order& order);
@@ -48,9 +48,9 @@ private:
     static std::vector<event> reject_update(const order_key& key, std::string reason);
     static std::vector<event> reject_cancel(const order_key& key, std::string reason);
 
-    order_book& get_or_create_book(const symbol& instrument);
-    order_book* find_book(const symbol& instrument);
-    const order_book* find_book(const symbol& instrument) const;
+    order_book& get_or_create_book(const symbol_id& instrument);
+    order_book* find_book(const symbol_id& instrument);
+    const order_book* find_book(const symbol_id& instrument) const;
 
     void record_submit_result(
         const submit_order& order,

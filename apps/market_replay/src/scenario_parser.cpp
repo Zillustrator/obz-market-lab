@@ -8,7 +8,9 @@
 #include <limits>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <unordered_map>
 #include <utility>
 
 namespace obz::market_lab::replay {
@@ -138,17 +140,38 @@ std::string remove_comment(std::string line) {
     return line;
 }
 
+struct symbol_table {
+    symbol_id intern(std::string_view text) {
+        auto name = std::string{text};
+        if (const auto found = ids.find(name); found != ids.end()) {
+            return found->second;
+        }
+
+        if (next_id == 0) {
+            throw std::overflow_error{"scenario symbol IDs are exhausted"};
+        }
+
+        const auto id = symbol_id{next_id};
+        ids.emplace(std::move(name), id);
+        ++next_id;
+        return id;
+    }
+
+    std::unordered_map<std::string, symbol_id> ids;
+    std::uint32_t next_id{1};
+};
+
 submit_order make_limit_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t limit_price,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
@@ -158,13 +181,13 @@ submit_order make_limit_order(
 submit_order make_market_order(
     std::uint64_t user,
     std::uint64_t client_order,
-    std::string instrument,
+    symbol_id instrument,
     side direction,
     std::uint64_t size
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{std::move(instrument)},
+        instrument,
         direction,
         order_pricing{std::in_place_type<market_order>},
         quantity{size}
@@ -190,7 +213,11 @@ update_order make_limit_update(
     };
 }
 
-scenario_command parse_submit(std::string_view line, std::size_t line_number) {
+scenario_command parse_submit(
+    std::string_view line,
+    std::size_t line_number,
+    symbol_table& symbols
+) {
     const auto pricing = read_token(line, "pricing", line_number);
     const auto user = parse_uint64(
         read_token(line, "user", line_number),
@@ -222,7 +249,7 @@ scenario_command parse_submit(std::string_view line, std::size_t line_number) {
             make_limit_order(
                 user,
                 client_order,
-                std::string{instrument},
+                symbols.intern(instrument),
                 direction,
                 limit_price,
                 size
@@ -242,7 +269,7 @@ scenario_command parse_submit(std::string_view line, std::size_t line_number) {
             make_market_order(
                 user,
                 client_order,
-                std::string{instrument},
+                symbols.intern(instrument),
                 direction,
                 size
             )
@@ -306,7 +333,11 @@ scenario_command parse_update(std::string_view line, std::size_t line_number) {
     };
 }
 
-scenario_command parse_snapshot(std::string_view line, std::size_t line_number) {
+scenario_command parse_snapshot(
+    std::string_view line,
+    std::size_t line_number,
+    symbol_table& symbols
+) {
     const auto instrument = read_token(line, "instrument", line_number);
     const auto depth = parse_size(
         read_token(line, "depth", line_number),
@@ -316,21 +347,20 @@ scenario_command parse_snapshot(std::string_view line, std::size_t line_number) 
     reject_extra_tokens(line, line_number);
 
     return scenario_snapshot{
-        snapshot_command{symbol{std::string{instrument}}, depth}
+        snapshot_command{symbols.intern(instrument), depth}
     };
 }
 
-} // namespace
-
-scenario_command scenario_parser::parse_command(
+scenario_command parse_command(
     std::string_view line,
-    std::size_t line_number
+    std::size_t line_number,
+    symbol_table& symbols
 ) {
     auto remaining = line;
     const auto command = read_token(remaining, "command", line_number);
 
     if (command == "submit") {
-        return parse_submit(remaining, line_number);
+        return parse_submit(remaining, line_number, symbols);
     }
 
     if (command == "update") {
@@ -342,7 +372,7 @@ scenario_command scenario_parser::parse_command(
     }
 
     if (command == "snapshot") {
-        return parse_snapshot(remaining, line_number);
+        return parse_snapshot(remaining, line_number, symbols);
     }
 
     throw std::runtime_error{
@@ -353,6 +383,8 @@ scenario_command scenario_parser::parse_command(
     };
 }
 
+} // namespace
+
 std::vector<scenario_step> scenario_parser::load(std::string_view path) const {
     std::ifstream input{std::string{path}};
     if (!input) {
@@ -362,6 +394,7 @@ std::vector<scenario_step> scenario_parser::load(std::string_view path) const {
     }
 
     std::vector<scenario_step> steps;
+    symbol_table symbols;
     std::string line;
     std::size_t line_number{};
 
@@ -374,7 +407,7 @@ std::vector<scenario_step> scenario_parser::load(std::string_view path) const {
             continue;
         }
 
-        auto command = parse_command(command_text, line_number);
+        auto command = parse_command(command_text, line_number, symbols);
         steps.push_back(
             scenario_step{
                 line_number,

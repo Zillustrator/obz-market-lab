@@ -8,17 +8,17 @@ behaviour, not a complete exchange specification.
 
 ## Core Concepts
 
-The matching engine manages one independent order book per symbol.
+The matching engine manages one independent order book per numeric symbol ID.
 
 Each submitted order has:
 
 - an `order_key`, made from a user id and client order id
-- a symbol
+- a non-zero `symbol_id`
 - a side: buy or sell
 - pricing: limit or market
 - a positive quantity
 
-Each symbol book has:
+Each symbol-ID book has:
 
 - bid levels ordered from highest price to lowest price
 - ask levels ordered from lowest price to highest price
@@ -30,7 +30,7 @@ A submit command is rejected before reaching an order book when:
 
 - the user id is zero
 - the client order id is zero
-- the symbol is empty
+- the symbol ID is zero
 - the quantity is zero
 - the order key is already active
 

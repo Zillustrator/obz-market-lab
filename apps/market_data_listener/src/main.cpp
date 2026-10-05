@@ -133,7 +133,7 @@ void print_packet(const packet& decoded) {
     const auto& update = std::get<book_update>(decoded.payload);
 
     std::cout << "received sequence=" << decoded.sequence
-              << " symbol=" << update.symbol
+              << " symbol_id=" << update.instrument.value
               << " side=" << side_name(update.direction)
               << " best_price=";
 

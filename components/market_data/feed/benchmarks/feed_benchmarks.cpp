@@ -22,7 +22,7 @@ packet make_packet(std::uint64_t sequence) {
     return packet{
         sequence,
         book_update{
-            .symbol = "ETH-USD",
+            .instrument = symbol_id{1},
             .direction = side::buy,
             .best_price = 2'500,
             .aggregate_size = 10

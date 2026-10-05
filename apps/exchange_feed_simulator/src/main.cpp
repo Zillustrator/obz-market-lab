@@ -111,7 +111,7 @@ submit_order make_limit_order(
 ) {
     return submit_order{
         order_key{user_id{user}, client_order_id{client_order}},
-        symbol{"ETH-USD"},
+        symbol_id{1},
         direction,
         order_pricing{std::in_place_type<limit_order>, price{limit_price}},
         quantity{size}
